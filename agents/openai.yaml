@@ -1,1 +1,4 @@
-
+interface:
+  display_name: "Repository Cleanup"
+  short_description: "Clean up repositories and simplify project documentation"
+  default_prompt: "Use $repo-cleanup to organize this repository, fix stale instructions, and simplify README and AGENTS within existing authorization while preserving useful work and user changes."
