@@ -16,7 +16,7 @@ Reduce wasted space and reading overhead while preserving useful work. Use the u
 
 ## Establish What Each Item Is For
 
-Inspect the actual repository root, applicable rules, Git status, worktrees, top-level directory sizes, ignore rules, and build entry points. Search documentation as needed: read its structure and relevant sections first, without loading entire histories just for cleanup.
+Identify the host OS, active shell, and actual repository root before choosing commands. On Windows (PowerShell, Git Bash, or WSL), read [Windows cleanup](references/windows.md) for path, link, and file-lock handling. Inspect applicable rules, Git status, worktrees, top-level directory sizes, ignore rules, and build entry points. Search documentation as needed: read its structure and relevant sections first, without loading entire histories just for cleanup.
 
 Determine purpose from entry points, imports, tests, scripts, and release configuration. Treat filenames and modification dates only as clues:
 

@@ -26,6 +26,12 @@ Inspect only: `Use $repo-cleanup to inventory this repository without changing f
 
 You can narrow the scope: “only remove build caches,” “only simplify AGENTS,” or “retire merged worktrees and keep the branches.”
 
+## Windows
+
+[Windows guidance](references/windows.md) covers native PowerShell 5.1 / 7, Git Bash, and WSL: literal paths, junctions, file locks, and Git exit codes. WSL is not required. The installation command is unchanged; `npx` requires Node.js.
+
+The guidance has been checked against official documentation and reviewed in scenarios; Windows machine validation is still pending.
+
 ## How it works
 
 - Distinguishes source, caches, deliverables, and historical material by references and purpose. Ignore rules and age alone do not justify deletion.

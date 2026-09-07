@@ -26,6 +26,12 @@ npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent codex --glo
 
 也可限定为“只清理编译缓存”“只精简 AGENTS”“收尾已合并工作区，保留分支”。
 
+## Windows
+
+提供原生 PowerShell 5.1 / 7、Git Bash 和 WSL 的[适配指引](references/windows.md)，涵盖特殊字符路径、目录联接、文件占用及 Git 退出码。无需为了使用 skill 安装 WSL；安装命令不变，使用 `npx` 需要 Node.js。
+
+已核对官方文档并进行场景审查，尚未完成 Windows 实机验证。
+
 ## 工作方式
 
 - 根据引用和用途区分源码、缓存、交付件与历史资料；忽略规则和文件年龄不直接决定删除。
