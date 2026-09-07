@@ -6,6 +6,8 @@ Read this only when retiring worktrees or branches. Merge status and whether a d
 
 Determine the target branch from the current goal, repository rules, and remote configuration; do not assume `main` or `origin`. Record the candidate worktree's HEAD and the target branch SHA, then compare those fixed values. Recheck that they have not changed immediately before deletion.
 
+The examples below use Bash. For native PowerShell commands and exit handling, use [Windows cleanup](windows.md). Keep Git and paths in the same Windows or WSL environment.
+
 Below, `wt` is the verified absolute path of the candidate, and `base_ref` is the actual target branch reference:
 
 ```bash
