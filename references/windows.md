@@ -24,7 +24,7 @@ Treat the `ReparsePoint` attribute as a reason to identify the target and type, 
 
 On a sharing violation, identify the exact owning process with available Resource Monitor / Process Explorer / Sysinternals Handle facilities. A process-name list is not a file-handle check. After a failed removal, recheck both the directory and Git registration for partial changes. Release the relevant build or dev-server handle within existing authorization and retry when new evidence resolves the cause; otherwise retain the item and report the blocker. Do not mass-kill editors, force-close handles, or change ACLs merely to complete cleanup.
 
-For a verified ordinary cache directory, use `Remove-Item -LiteralPath $candidate -Recurse -Force -ErrorAction Stop` only after the normal retention and occupancy checks, then confirm absence with `Test-Path -LiteralPath $candidate`. Use `git worktree remove` for registered worktrees. Long-path or access errors are failures to resolve, not reasons to bypass checks by switching environments or changing system policy.
+For a verified ordinary cache directory, use `Remove-Item -LiteralPath $candidate -Recurse -Force -ErrorAction Stop` only after the normal retention and occupancy checks, then confirm absence with `Test-Path -LiteralPath $candidate`. For registered worktrees, select the managed archive or ordinary Git removal workflow in [worktrees.md](worktrees.md). Long-path or access errors are failures to resolve, not reasons to bypass checks by switching environments or changing system policy.
 
 ## PowerShell Worktree Checks
 
@@ -53,6 +53,6 @@ Inspect each inventory command's result and exit code before proceeding; an empt
 
 ## Measurements and Documentation
 
-Report logical file sizes separately from allocated storage and volume free space. NTFS compression, hardlinks, cloud placeholders, and WSL virtual disks can make them differ. WSL free space is not automatically reclaimed Windows host space; VHD compaction is a separate task. Preserve repository encoding and line endings when editing docs; do not change `core.autocrlf` globally or turn a small edit into whole-file newline churn.
+When measuring space cleanup, report logical file sizes separately from allocated storage and volume free space. NTFS compression, hardlinks, cloud placeholders, and WSL virtual disks can make them differ. WSL free space is not automatically reclaimed Windows host space; VHD compaction is a separate task. Preserve repository encoding and line endings when editing docs; do not change `core.autocrlf` globally or turn a small edit into whole-file newline churn. Documentation-only work does not require storage measurements.
 
 References: [PowerShell parsing](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing), [literal paths and directory enumeration](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem), [native exit codes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_automatic_variables), [Handle](https://learn.microsoft.com/en-us/sysinternals/downloads/handle), [WSL filesystems](https://learn.microsoft.com/en-us/windows/wsl/filesystems).
