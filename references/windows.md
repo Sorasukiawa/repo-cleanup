@@ -1,6 +1,6 @@
 # Windows Repository Cleanup
 
-Read this for Windows-hosted tasks. Use the existing shell and tools; installing WSL, switching shells, or changing machine configuration is not required for cleanup.
+Read this for Windows-hosted tasks. Use the existing shell and tools; installing WSL, switching shells, or changing machine configuration is not required for cleanup. `scripts/survey.sh` runs in Git Bash or WSL; in native PowerShell, use the commands below.
 
 ## Match the Shell and Filesystem
 
@@ -24,7 +24,7 @@ Treat the `ReparsePoint` attribute as a reason to identify the target and type, 
 
 On a sharing violation, identify the exact owning process with available Resource Monitor / Process Explorer / Sysinternals Handle facilities. A process-name list is not a file-handle check. After a failed removal, recheck both the directory and Git registration for partial changes. Release the relevant build or dev-server handle within existing authorization and retry when new evidence resolves the cause; otherwise retain the item and report the blocker. Do not mass-kill editors, force-close handles, or change ACLs merely to complete cleanup.
 
-For a verified ordinary cache directory, use `Remove-Item -LiteralPath $candidate -Recurse -Force -ErrorAction Stop` only after the normal retention and occupancy checks, then confirm absence with `Test-Path -LiteralPath $candidate`. For registered worktrees, select the managed archive or ordinary Git removal workflow in [worktrees.md](worktrees.md). Long-path or access errors are failures to resolve, not reasons to bypass checks by switching environments or changing system policy.
+For a verified ordinary cache directory, use `Remove-Item -LiteralPath $candidate -Recurse -Force -ErrorAction Stop` only after the normal retention and occupancy checks, then confirm absence with `Test-Path -LiteralPath $candidate`. For registered worktrees, select the host archive ([hosts.md](hosts.md)) or ordinary Git removal workflow ([worktrees.md](worktrees.md)); `git worktree remove` deletes ignored files such as `.env` without `--force`, so preserve them first. Long-path or access errors are failures to resolve, not reasons to bypass checks by switching environments or changing system policy.
 
 ## PowerShell Worktree Checks
 
@@ -35,7 +35,7 @@ git worktree list --porcelain
 if ($LASTEXITCODE -ne 0) { throw 'Cannot list worktrees' }
 git -C "$wt" status --porcelain=v1 --untracked-files=all
 if ($LASTEXITCODE -ne 0) { throw 'Cannot read worktree status' }
-git -C "$wt" ls-files --others --ignored --exclude-standard
+git -C "$wt" ls-files --others --ignored --exclude-standard --directory
 if ($LASTEXITCODE -ne 0) { throw 'Cannot list ignored files' }
 $tipSha = git -C "$wt" rev-parse --verify HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve worktree HEAD' }
@@ -45,11 +45,13 @@ git merge-base --is-ancestor "$tipSha" "$baseSha"
 $ancestorExit = $LASTEXITCODE
 if ($ancestorExit -gt 1 -or $ancestorExit -lt 0) { throw 'Ancestry check failed' }
 # 0: history included; 1: inspect squash/rebase evidence. Neither proves the directory disposable.
+git for-each-ref --format='%(refname:short) %(upstream:track) %(worktreepath)' refs/heads
+if ($LASTEXITCODE -ne 0) { throw 'Cannot list branches' }
 gh pr list --repo "$repo" --head "$branch" --base "$baseBranch" --state merged --json number,url,headRefOid,baseRefName,headRepositoryOwner,mergeCommit
 if ($LASTEXITCODE -ne 0) { throw 'Cannot query merge evidence' }
 ```
 
-Inspect each inventory command's result and exit code before proceeding; an empty result after failure is not a clean worktree. `gh` is optional: use the hosting UI/API if available, or retain candidates lacking sufficient merge evidence. Recheck the recorded SHAs immediately before removal.
+Inspect each inventory command's result and exit code before proceeding; an empty result after failure is not a clean worktree. `gh` is optional: use the hosting UI/API if available, or retain candidates lacking sufficient merge evidence. Recheck the recorded SHAs immediately before removal. `git clean -ndX` previews ignored content in PowerShell too; it also lists `.env`, so never follow it with `git clean -fdX`.
 
 ## Measurements and Documentation
 

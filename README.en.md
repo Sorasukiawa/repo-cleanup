@@ -2,21 +2,27 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-TW.md) · [English](README.en.md) · [日本語](README.ja.md)
 
-A lightweight skill for AI coding agents: remove unnecessary caches, safely retire unneeded worktrees, and review and organize project documentation such as README / AGENTS when relevant to the task.
+A lightweight skill for AI coding agents: remove unnecessary caches, safely retire unneeded worktrees and merged branches, and review and organize project documentation such as README / AGENTS / CLAUDE.md when relevant to the task.
 
 Preserve useful work and keep documentation accurate, easy to find, and actionable; reclaim unnecessary storage when needed. Proceed within existing authorization and match validation to the changes.
 
 ## Install
 
-Use the [skills CLI](https://github.com/vercel-labs/skills) to install for Codex globally:
+Use the [skills CLI](https://github.com/vercel-labs/skills) to install into your personal skills directory:
 
 ```bash
 npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent codex --global
 ```
 
-Alternatively, download the repository and place `SKILL.md`, `references/`, and `agents/` in `repo-cleanup/` under your personal skills directory. If a skill with the same name already exists, check its source and any local customizations first.
+```bash
+npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent claude-code --global
+```
+
+Alternatively, download the repository and place `SKILL.md`, `references/`, `scripts/`, and `agents/` in `repo-cleanup/` under your personal skills directory (`~/.codex/skills/` for Codex, `~/.claude/skills/` for Claude Code). `tests/` and `evals/` are for maintenance only. If a skill with the same name already exists, check its source and any local customizations first.
 
 ## Use
+
+Invoke it as `$repo-cleanup` in Codex or `/repo-cleanup` in Claude Code, or just describe the task:
 
 ```text
 Use $repo-cleanup to organize this repository within the current goal, review README and AGENTS, fix demonstrated issues, and leave suitable content unchanged.
@@ -24,30 +30,68 @@ Use $repo-cleanup to organize this repository within the current goal, review RE
 
 Inspect only: `Use $repo-cleanup to inventory this repository without changing files.`
 
-You can narrow the scope: “only remove build caches,” “only simplify AGENTS,” or “retire merged worktrees and keep the branches.”
-
-## Windows
-
-[Windows guidance](references/windows.md) covers native PowerShell 5.1 / 7, Git Bash, and WSL: literal paths, junctions, file locks, and Git exit codes. WSL is not required. The installation command is unchanged; `npx` requires Node.js.
-
-The guidance has been checked against official documentation and reviewed in scenarios; Windows machine validation is still pending.
+You can narrow the scope: “only remove build caches,” “only simplify AGENTS,” “retire merged worktrees and keep the branches,” or “delete merged local branches and leave the remote alone.”
 
 ## How it works
 
-- Distinguishes source, caches, deliverables, and historical material by references and purpose. Ignore rules and age alone do not justify deletion.
-- Checks active use and reuse needs first. Uses native archival for Codex-managed worktrees and preserves unique work before removing ordinary Git worktrees. When merge verification is required, covers squash merges, later commits, and detached HEAD.
-- Treats accuracy and usability as the documentation goals, with simplification as an optional means. Keeps suitable content unchanged and adds missing information when needed. README serves readers; AGENTS retains durable project guidance, while phase arrangements belong in progress documents.
-- Follows the target repository's commit conventions. Local cleanup does not automatically extend to remote deletion or issue updates.
-- For space cleanup, reports reduced directory usage separately from increased free disk space. Documentation-only tasks need no repository-wide storage scan; validation matches the changes.
+- Chooses a mode first: an inspection is strictly read-only (no fetch, build, edit, or deletion); execution completes the authorized scope on its own and collects pending items into one question at the end.
+- Reads only the references the task needs: space cleanup, worktrees and branches, host-managed worktrees, documentation, Windows.
+- Distinguishes source, caches, local secrets, deliverables, and historical material by references and purpose. Ignore rules and age alone do not justify deletion. The Common Misjudgments table in SKILL.md lists the easiest ways to delete the wrong thing, such as `git worktree remove` also deleting an ignored `.env`.
+- Worktree retirement passes gate checks first (in use, locked, host-managed, unsaved changes or ignored files), then merge evidence: regular merges, squash merges (the local tip must equal the PR's `headRefOid`), and detached HEAD. Codex-managed worktrees use native archival; Claude Code and desktop-app worktrees go through the host first.
+- Branches are kept by default. Deletion uses `-d` or `-D` under stated conditions and records `name sha` for restoration. `[gone]` is only a clue. Remotes and issues are never changed automatically.
+- Treats accuracy and usability as the documentation goals, with simplification as an optional means. README serves readers; AGENTS / CLAUDE.md retain durable project guidance, while phase arrangements belong in progress documents.
+- Reports lead with a decision table (item, kind, evidence, size, proposal or result) and end with DONE or PENDING. Space cleanup reports reduced directory usage separately from increased free disk space.
 
-[SKILL.md](SKILL.md) is the single English instruction entry point; read the [worktree reference](references/worktrees.md) whenever retiring worktrees or branches. Agents use the user's language for conversation and reports, defaulting to Simplified Chinese when unspecified. The four README translations help readers get started and do not need to be loaded together.
+`scripts/survey.sh` takes a read-only inventory of every worktree and local branch in one call:
 
-This is a workflow guide, with no installation hooks or automatic deletion executable. Validation in Codex includes format checks, execution and read-only scenarios in isolated repositories, and Git fixtures for merge reachability, detached commits, squash merges, later commits, ignored files, and invalid refs. Not every agent, operating system, or repository layout has been tested. Reproducible cases are welcome in Issues.
+```bash
+bash ~/.codex/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
+```
 
-This documentation and archival workflow update passed format, internal-link, and file-consistency checks. Codex-managed worktree archival and restoration have not yet been exercised.
+For Claude Code installs the path is `~/.claude/skills/repo-cleanup/scripts/survey.sh`. `--base` is required for comparisons; the script never guesses the target branch. Its output is evidence, and the skill's rules still make the decision.
+
+## Layout
+
+| Path | Purpose |
+| --- | --- |
+| `SKILL.md` | English instruction entry point: modes, routing, purpose classification, common misjudgments, report format |
+| `references/space.md` | Cache and build-output cleanup, ecosystem cheat sheet, space measurement |
+| `references/worktrees.md` | Worktree and branch retirement: gates, merge evidence, decision table, branch deletion |
+| `references/hosts.md` | Worktrees managed by Codex, Claude Code, and the Claude desktop app |
+| `references/docs.md` | README, AGENTS, CLAUDE.md, and other documentation and rules |
+| `references/windows.md` | Native PowerShell, Git Bash, and WSL |
+| `scripts/survey.sh` | Read-only inventory script |
+| `tests/`, `evals/` | Fixtures, regression tests, behavior and trigger evals |
+
+Agents use the user's language for conversation and reports, defaulting to Simplified Chinese when unspecified. The four README translations help readers get started and do not need to be loaded together.
+
+## Non-goals
+
+- No automatic deletion program or installation hooks; `survey.sh` is read-only.
+- No cleanup of caches outside the repository (Xcode DerivedData, global npm / pnpm caches, Docker, and so on), and no maintenance of installed agent tools or skills.
+- No remote branch deletion or PR / issue updates by default.
+- No removal of useful documentation just to make it shorter.
+
+## Windows
+
+[Windows guidance](references/windows.md) covers native PowerShell 5.1 / 7, Git Bash, and WSL: literal paths, junctions, file locks, and Git exit codes. `survey.sh` runs in Git Bash or WSL; native PowerShell uses the commands in the guidance. WSL is not required, and `npx` requires Node.js.
+
+## Tests and validation
+
+```bash
+bash tests/check-skill.sh
+```
+
+```bash
+bash tests/test-survey.sh
+```
+
+`check-skill.sh` checks frontmatter, size, links, version, eval JSON, and key safety rules. `test-survey.sh` builds a fixture repository with 11 scenarios in a temporary directory and verifies the inventory script's output and read-only behavior, plus the Git behaviors the references depend on. `evals/evals.json` holds behavior cases to run with an agent, and `evals/trigger-evals.json` holds trigger queries, both compatible with [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator).
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and how far it was validated. Reproducible cases are welcome in Issues.
 
 ## References and license
 
-The documentation approach was informed by [agent-md-refactor](https://github.com/softaworks/agent-toolkit/tree/main/skills/agent-md-refactor). The worktree workflow was compared with [cleanup-repo](https://github.com/rheged-studio/agent-skills/tree/main/skills/cleanup-repo) and the official Git / GitHub CLI documentation linked in the reference. This project is independently maintained.
+The documentation approach was informed by [agent-md-refactor](https://github.com/softaworks/agent-toolkit/tree/main/skills/agent-md-refactor) and [claude-md-improver](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-md-management). The worktree workflow was compared with [cleanup-repo](https://github.com/rheged-studio/agent-skills/tree/main/skills/cleanup-repo), [pd:cleanup](https://github.com/peterdrier/skills/tree/main/plugins/pd/skills/cleanup), the finishing-a-development-branch skill in [superpowers](https://github.com/obra/superpowers), and the official Git / GitHub CLI / Claude Code documentation linked in the references. The testing approach follows [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) and superpowers' writing-skills. This project is independently maintained.
 
 [MIT](LICENSE) © 2026 Sorasukiawa.

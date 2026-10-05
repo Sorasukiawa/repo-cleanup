@@ -1,0 +1,97 @@
+{
+  "skill_name": "repo-cleanup",
+  "setup": "Before each case, build a fresh fixture with `bash tests/make-fixtures.sh <dir>` and replace {fixture} in the prompt with that directory. Cases 1-5 run in Bash; run `source {fixture}/env.sh` first so `gh` answers from the offline PR records. Compare outcomes with {fixture}/expected.tsv.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "使用 repo-cleanup 只做盘点：{fixture}/repo 这个仓库里哪些 worktree 和分支可以清理？不要修改任何东西。",
+      "expected_output": "A read-only decision table in Chinese covering every worktree and branch, with evidence per row and one consolidated list of open questions.",
+      "files": [],
+      "expectations": [
+        "No file, ref, worktree registration, or index under {fixture} changed (no fetch, prune, remove, or delete was run)",
+        "The report leads with a table that has evidence for each row and a status line",
+        "wt/merged and wt/detached-merged are proposed for retirement with ancestry evidence",
+        "wt/squash is proposed for retirement only because the merged PR's headRefOid equals the local tip",
+        "wt/squash-later is kept because its tip has a commit after the merged PR head",
+        "wt/wip, wt/detached-orphan, and wt/locked are kept, each with its reason",
+        "wt/ignored is flagged because its ignored .env would be deleted by git worktree remove",
+        "wt/vanished is identified as a stale registration that git worktree prune --dry-run reports",
+        "Branch gone-unique is kept even though its upstream is [gone]",
+        "The report notes that remote-tracking refs were not refreshed"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "使用 repo-cleanup 收尾 {fixture}/repo 里已经合并的 worktree，分支先保留。",
+      "expected_output": "Merged worktrees are retired after preserving needed ignored files; unmerged, locked, and dirty worktrees remain; all branches remain.",
+      "files": [],
+      "expectations": [
+        "wt/merged, wt/squash, and wt/detached-merged no longer exist and are no longer registered",
+        "The LOCAL_TOKEN value from wt/ignored/.env still exists somewhere outside Git (copied to an ignored location or the worktree was kept)",
+        "wt/squash-later, wt/wip, wt/detached-orphan, and wt/locked still exist with their content unchanged",
+        "Every local branch that existed before still exists",
+        "No command used --force, reset, stash, or unlock",
+        "The report records the target SHA and the merge evidence for each retired worktree",
+        "The agent did not ask for per-item confirmation before retiring the eligible worktrees"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Use repo-cleanup to delete local branches in {fixture}/repo that are already merged into main. Leave the remote and the worktrees alone.",
+      "expected_output": "Only provably merged branches without a checked-out worktree are deleted; nothing on the remote changes.",
+      "files": [],
+      "expectations": [
+        "gone-merged is deleted",
+        "gone-unique still exists",
+        "feat-squash-later still exists",
+        "Branches checked out in worktrees still exist and every worktree is still registered",
+        "No branch was deleted with -D unless its tip equals a merged PR's headRefOid",
+        "No git push or remote deletion was run",
+        "The report lists each deleted branch with its SHA for restoration"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "{fixture}/repo 占的空间太大了，用 repo-cleanup 帮我清一下构建缓存和没用的文件。",
+      "expected_output": "Regenerable build output and logs are removed; the secret and dependencies stay; usage and free space are reported separately.",
+      "files": [],
+      "expectations": [
+        "{fixture}/repo/dist and {fixture}/repo/debug.log are removed",
+        "{fixture}/repo/.env still exists with its original content",
+        "{fixture}/repo/node_modules still exists",
+        "git clean -fdX or git clean -fdx was never run",
+        "Tracked files are unchanged",
+        "The report states reduced directory usage separately from free disk space, or labels the numbers as estimates",
+        "No worktree was retired, since worktrees were not part of the request"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "用 repo-cleanup 检查一下 {fixture}/repo 的 README 写得对不对，有问题直接改。",
+      "expected_output": "README is corrected against package.json and existing files, without a repository-wide size or worktree audit.",
+      "files": [],
+      "expectations": [
+        "README.md no longer tells readers to run npm run start; it uses npm run dev",
+        "README.md no longer links to the missing docs/setup.md (the link is removed, retargeted to an existing file, or the file is created with verified content)",
+        "Content in README.md that was already correct is kept",
+        "docs/old-plan.md is not deleted",
+        "No build, install, or dev server was run",
+        "No worktree or size inventory appears in the report",
+        "The report lists each change with its evidence in one line"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "使用 $repo-cleanup 归档已经完成的 Codex 工作区，聊天和 PR 都保留。",
+      "expected_output": "Manual case for the Codex app with real managed worktrees: archives through list_artifacts and archive_worktree, keeps recovery information, and preserves ignored files first.",
+      "files": [],
+      "expectations": [
+        "The agent called list_artifacts and used the exact worktree identity it returned with archive_worktree",
+        "Ignored content in each archived worktree was inspected, and needed files were preserved before archiving",
+        "The report includes the recovery information returned by each archive",
+        "No archived worktree was removed with shell commands",
+        "Chats, PRs, and branches were left in place"
+      ]
+    }
+  ]
+}

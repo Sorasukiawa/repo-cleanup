@@ -1,0 +1,22 @@
+[
+  {"query": "帮我看看这个仓库里哪些东西有用，哪些可以删", "should_trigger": true},
+  {"query": "整理一下当前项目，顺便检查 README 和 AGENTS.md 是不是还准确", "should_trigger": true},
+  {"query": "这个 repo 里 worktree 堆了一堆，已经合并的帮我收掉，分支先留着", "should_trigger": true},
+  {"query": "清理一下项目的编译缓存，dist 和 .next 太占地方了", "should_trigger": true},
+  {"query": "delete the local branches that were already squash-merged on GitHub", "should_trigger": true},
+  {"query": "can you audit this repo for stale files, leftover build output and old worktrees? don't change anything yet", "should_trigger": true},
+  {"query": "our CLAUDE.md is a mess and half the commands are outdated, clean it up", "should_trigger": true},
+  {"query": "仓库根目录有好多旧的设计稿和进度报告，帮我判断哪些该归档", "should_trigger": true},
+  {"query": "prune merged worktrees under .claude/worktrees but keep anything with uncommitted work", "should_trigger": true},
+  {"query": "这个仓库好乱，帮我收拾收拾", "should_trigger": true},
+  {"query": "我的 Mac 磁盘快满了，帮我清一下系统缓存和下载文件夹", "should_trigger": false},
+  {"query": "清理一下 ~/Library/Developer/Xcode/DerivedData 和 npm 全局缓存", "should_trigger": false},
+  {"query": "帮我更新一下已经安装的 Codex skills", "should_trigger": false},
+  {"query": "refactor the auth module to remove duplicated validation logic", "should_trigger": false},
+  {"query": "create a new git worktree for the payments feature", "should_trigger": false},
+  {"query": "write a README for this new library from scratch", "should_trigger": false},
+  {"query": "fix the failing unit tests in src/api", "should_trigger": false},
+  {"query": "git stash 之后怎么恢复之前的修改？", "should_trigger": false},
+  {"query": "rebase my feature branch onto main and resolve the conflicts", "should_trigger": false},
+  {"query": "帮我把这段 Python 代码里没用的 import 删掉", "should_trigger": false}
+]
