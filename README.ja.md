@@ -38,7 +38,7 @@ Claude Code ではプラグインと skills CLI のどちらか一方を使っ�
 
 ### 手動インストール
 
-手動の場合は、このリポジトリをダウンロードし、`SKILL.md`、`references/`、`scripts/`、`agents/` を個人用スキルディレクトリ（Codex は `~/.codex/skills/`、Claude Code は `~/.claude/skills/`）内の `repo-cleanup/` に配置してください。`tests/` と `evals/` は保守用です。同名のスキルがある場合は、入手元とローカルの変更内容を先に確認してください。
+手動の場合は、このリポジトリをダウンロードし、`SKILL.md`、`references/`、`scripts/`、`agents/` を個人用スキルディレクトリ（Codex は `~/.agents/skills/`。`~/.codex/skills/` も読み込まれます。Claude Code は `~/.claude/skills/`）内の `repo-cleanup/` に配置してください。`tests/` と `evals/` は保守用です。同名のスキルがある場合は、入手元とローカルの変更内容を先に確認してください。
 
 ## 使い方
 
@@ -66,10 +66,10 @@ $repo-cleanup を使って、今回の目的に沿ってリポジトリを整理
 `scripts/survey.sh` を使うと、すべての worktree とローカルブランチを一度に読み取り専用で調べられます。
 
 ```bash
-bash ~/.codex/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
+bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
 ```
 
-skills CLI で Claude Code にインストールした場合のパスは `~/.claude/skills/repo-cleanup/scripts/survey.sh` です。プラグインとして入れた場合は、スキルがスクリプトの完全なパスを自動で示します。比較には `--base` の指定が必要で、スクリプトが対象ブランチを推測することはありません。出力は判断材料であり、最終的な判断はスキルの規則に従います。
+上記は skills CLI で Codex にインストールした場合のパスです。`~/.codex/skills/` や `~/.claude/skills/` に置いた場合はそのディレクトリに読み替えてください。プラグインとして入れた場合は、スキルがスクリプトの完全なパスを自動で示します。比較には `--base` の指定が必要で、スクリプトが対象ブランチを推測することはありません。出力は判断材料であり、最終的な判断はスキルの規則に従います。
 
 ## ファイル構成
 

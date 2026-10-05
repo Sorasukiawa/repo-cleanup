@@ -36,7 +36,7 @@ In Claude Code, choose either the plugin or the skills CLI; installing both show
 
 ### Manual install
 
-Alternatively, download the repository and place `SKILL.md`, `references/`, `scripts/`, and `agents/` in `repo-cleanup/` under your personal skills directory (`~/.codex/skills/` for Codex, `~/.claude/skills/` for Claude Code). `tests/` and `evals/` are for maintenance only. If a skill with the same name already exists, check its source and any local customizations first.
+Alternatively, download the repository and place `SKILL.md`, `references/`, `scripts/`, and `agents/` in `repo-cleanup/` under your personal skills directory (`~/.agents/skills/` for Codex, which also reads `~/.codex/skills/`; `~/.claude/skills/` for Claude Code). `tests/` and `evals/` are for maintenance only. If a skill with the same name already exists, check its source and any local customizations first.
 
 ## Use
 
@@ -64,10 +64,10 @@ You can narrow the scope: “only remove build caches,” “only simplify AGENT
 `scripts/survey.sh` takes a read-only inventory of every worktree and local branch in one call:
 
 ```bash
-bash ~/.codex/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
+bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
 ```
 
-For skills CLI installs in Claude Code the path is `~/.claude/skills/repo-cleanup/scripts/survey.sh`; as a plugin, the skill gives Claude the script's full path automatically. `--base` is required for comparisons; the script never guesses the target branch. Its output is evidence, and the skill's rules still make the decision.
+This is the path for a skills CLI install for Codex; use `~/.codex/skills/` or `~/.claude/skills/` instead when the skill lives there. As a plugin, the skill gives Claude the script's full path automatically. `--base` is required for comparisons; the script never guesses the target branch. Its output is evidence, and the skill's rules still make the decision.
 
 ## Layout
 

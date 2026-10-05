@@ -38,7 +38,7 @@ npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent claude-code
 
 ### 手動安裝
 
-也可下載儲存庫，將 `SKILL.md`、`references/`、`scripts/` 和 `agents/` 放入個人技能目錄（Codex 為 `~/.codex/skills/`，Claude Code 為 `~/.claude/skills/`）的 `repo-cleanup/`。`tests/` 和 `evals/` 僅供維護使用。若已有同名 skill，請先核對來源與個人修改。
+也可下載儲存庫，將 `SKILL.md`、`references/`、`scripts/` 和 `agents/` 放入個人技能目錄（Codex 為 `~/.agents/skills/`，`~/.codex/skills/` 也會被讀取；Claude Code 為 `~/.claude/skills/`）的 `repo-cleanup/`。`tests/` 和 `evals/` 僅供維護使用。若已有同名 skill，請先核對來源與個人修改。
 
 ## 使用
 
@@ -66,10 +66,10 @@ Codex 使用 `$repo-cleanup`；Claude Code 使用 `/repo-cleanup`（以外掛安
 `scripts/survey.sh` 可一次唯讀盤點所有工作樹與本機分支：
 
 ```bash
-bash ~/.codex/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
+bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
 ```
 
-透過 skills CLI 安裝至 Claude Code 時路徑為 `~/.claude/skills/repo-cleanup/scripts/survey.sh`；以外掛安裝時，skill 會自動提供腳本的完整路徑。`--base` 必須明確指定，腳本不會猜測目標分支。其輸出只是證據，最終判斷仍依 skill 規則。
+上面是 skills CLI 安裝至 Codex 時的路徑；安裝在 `~/.codex/skills/` 或 `~/.claude/skills/` 時請換成對應目錄。以外掛安裝時，skill 會自動提供腳本的完整路徑。`--base` 必須明確指定，腳本不會猜測目標分支。其輸出只是證據，最終判斷仍依 skill 規則。
 
 ## 檔案結構
 
