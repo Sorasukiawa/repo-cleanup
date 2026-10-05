@@ -1,6 +1,25 @@
 # 更新记录
 
-版本号写在 `SKILL.md` 的 `metadata.version`，与本文件最上面的条目保持一致（`tests/check-skill.sh` 会检查）。
+版本号写在 `SKILL.md` 的 `metadata.version` 和 `.claude-plugin/plugin.json` 的 `version`，与本文件最上面的条目保持一致（`tests/check-skill.sh` 会检查）。Claude Code 插件按 `version` 判断更新，每次发布都要升版本号。
+
+## 1.2.0 — 2026-10-05
+
+### Claude Code 插件
+
+- 仓库现在同时是 Claude Code 插件和 marketplace：新增 `.claude-plugin/plugin.json` 和 `.claude-plugin/marketplace.json`。根目录的 `SKILL.md` 就是插件里唯一的 skill，与 Codex 共用同一份，不另外分叉。
+- 安装方式：`claude plugin marketplace add Sorasukiawa/repo-cleanup`，然后 `claude plugin install repo-cleanup@repo-cleanup`。skills CLI 和手动安装方式不变。
+- frontmatter 新增 `argument-hint` 和 `allowed-tools`。后者只预先授权只读命令：盘点脚本、`git status`、`git worktree list`、`git ls-files`、`git rev-parse`、`git rev-list`、`git merge-base`、`git for-each-ref`、`du -sh`、`df -h`。Codex 会忽略这两个字段。
+- SKILL.md 写明 `${CLAUDE_SKILL_DIR}/scripts/survey.sh`，Claude Code 会替换成实际路径。
+
+### 测试与文档
+
+- `tests/check-skill.sh` 新增检查：SKILL.md、plugin.json、CHANGELOG 三处版本一致，插件和 marketplace 名称与来源正确，`allowed-tools` 不含修改类命令，根目录不出现会改变插件结构的 `skills/`、`CLAUDE.md`、`bin/`。能找到 `claude` CLI 时，还会运行官方的 `claude plugin validate --strict`。
+- 四语 README 补充插件安装、更新、调用方式和文件结构说明。
+
+### 验证状态
+
+- 已验证：Claude Code 2.1.286 的 `claude plugin validate --strict` 对 marketplace 和 plugin 均通过；在隔离的配置目录中执行 `marketplace add` 和 `install` 均成功，`plugin details` 显示 Skills (1) repo-cleanup。Codex CLI 0.160 的 `codex debug prompt-input` 能正常列出该 skill。`tests/check-skill.sh` 和 `tests/test-survey.sh` 全部通过。
+- 未验证：在 Claude Code 会话中实际调用 skill 的效果，以及 `allowed-tools` 预授权的实际表现；`evals/` 行为用例仍未用 agent 运行。
 
 ## 1.1.0 — 2026-10-05
 

@@ -10,6 +10,20 @@
 
 ## 安裝
 
+### Claude Code 外掛
+
+```bash
+claude plugin marketplace add Sorasukiawa/repo-cleanup
+```
+
+```bash
+claude plugin install repo-cleanup@repo-cleanup
+```
+
+在工作階段中也可以使用 `/plugin marketplace add Sorasukiawa/repo-cleanup` 和 `/plugin install repo-cleanup@repo-cleanup`。之後更新請先執行 `claude plugin marketplace update repo-cleanup`，再執行 `claude plugin update repo-cleanup@repo-cleanup`。
+
+### skills CLI（Codex 或 Claude Code）
+
 使用 [skills CLI](https://github.com/vercel-labs/skills) 安裝至個人技能目錄：
 
 ```bash
@@ -20,11 +34,15 @@ npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent codex --glo
 npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent claude-code --global
 ```
 
+在 Claude Code 中，外掛與 skills CLI 擇一即可，同時安裝會出現兩個同名 skill。
+
+### 手動安裝
+
 也可下載儲存庫，將 `SKILL.md`、`references/`、`scripts/` 和 `agents/` 放入個人技能目錄（Codex 為 `~/.codex/skills/`，Claude Code 為 `~/.claude/skills/`）的 `repo-cleanup/`。`tests/` 和 `evals/` 僅供維護使用。若已有同名 skill，請先核對來源與個人修改。
 
 ## 使用
 
-Codex 使用 `$repo-cleanup`，Claude Code 使用 `/repo-cleanup`，也可以直接描述需求：
+Codex 使用 `$repo-cleanup`；Claude Code 使用 `/repo-cleanup`（以外掛安裝時完整名稱為 `/repo-cleanup:repo-cleanup`，沒有重名時可直接使用 `/repo-cleanup`），並可附帶範圍，例如 `/repo-cleanup 只做盤點`。也可以直接描述需求：
 
 ```text
 使用 $repo-cleanup 按本次目標整理目前的儲存庫，檢查 README 和 AGENTS，修正有明確依據的問題，合適的內容保持原樣。
@@ -42,6 +60,7 @@ Codex 使用 `$repo-cleanup`，Claude Code 使用 `/repo-cleanup`，也可以直
 - 工作樹退役先通過門檻檢查（使用中、已鎖定、宿主管理、未保存的變更或 ignored 檔案），再看合併證據：一般合併、squash 合併（本機 tip 必須等於 PR 的 `headRefOid`）、detached HEAD。Codex 管理的工作樹使用原生封存，Claude Code 與桌面版的工作樹優先交由宿主處理。
 - 分支預設保留；刪除時 `-d` 與 `-D` 各有條件，並記錄 `name sha` 以便還原。`[gone]` 只是線索。遠端與議題不會自動變更。
 - 文件以準確、易用為目標，精簡僅是按需手段。README 服務讀者，AGENTS / CLAUDE.md 保留專案決策所需的長期約定，階段安排放入進度文件。
+- 在 Claude Code 中，盤點腳本與唯讀的 git、`du`、`df` 查詢已透過 `allowed-tools` 預先授權，盤點時不會逐條跳出權限確認；刪除、移除、推送類指令不在其中。
 - 報告先給決策表（項目｜類型｜證據｜大小｜建議或結果），結尾標明 DONE 或 PENDING。釋放空間時，分別回報目錄占用減少量與磁碟可用空間增量。
 
 `scripts/survey.sh` 可一次唯讀盤點所有工作樹與本機分支：
@@ -50,13 +69,15 @@ Codex 使用 `$repo-cleanup`，Claude Code 使用 `/repo-cleanup`，也可以直
 bash ~/.codex/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
 ```
 
-Claude Code 安裝時路徑為 `~/.claude/skills/repo-cleanup/scripts/survey.sh`。`--base` 必須明確指定，腳本不會猜測目標分支。其輸出只是證據，最終判斷仍依 skill 規則。
+透過 skills CLI 安裝至 Claude Code 時路徑為 `~/.claude/skills/repo-cleanup/scripts/survey.sh`；以外掛安裝時，skill 會自動提供腳本的完整路徑。`--base` 必須明確指定，腳本不會猜測目標分支。其輸出只是證據，最終判斷仍依 skill 規則。
 
 ## 檔案結構
 
 | 路徑 | 用途 |
 | --- | --- |
 | `SKILL.md` | 英文執行入口：模式、路由、用途分類、常見誤判、報告格式 |
+| `.claude-plugin/` | Claude Code 外掛與 marketplace 清單；儲存庫根目錄即外掛，`SKILL.md` 是其中唯一的 skill |
+| `agents/openai.yaml` | Codex 介面中的顯示名稱、簡介與預設提示 |
 | `references/space.md` | 快取與建置產物清理、各生態速查、空間統計 |
 | `references/worktrees.md` | 工作樹與分支退役：門檻、合併證據、決策表、分支刪除 |
 | `references/hosts.md` | Codex、Claude Code、Claude 桌面版管理的工作樹 |
@@ -88,7 +109,7 @@ bash tests/check-skill.sh
 bash tests/test-survey.sh
 ```
 
-`check-skill.sh` 檢查 frontmatter、行數、連結、版本號、eval JSON 與關鍵安全規則。`test-survey.sh` 在暫存目錄產生含 11 種情境的夾具儲存庫，驗證盤點腳本的輸出與唯讀性，以及參考文件所依賴的 Git 行為。`evals/evals.json` 是以 agent 執行的行為案例，`evals/trigger-evals.json` 是觸發評估查詢，格式與 [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) 相容。
+`check-skill.sh` 檢查 frontmatter、行數、連結、版本號（SKILL.md、plugin.json、CHANGELOG 三處一致）、JSON 檔案與關鍵安全規則；設定 `CLAUDE_BIN` 或 PATH 中有 `claude` 時，也會執行官方的 `claude plugin validate --strict`。`test-survey.sh` 在暫存目錄產生含 11 種情境的夾具儲存庫，驗證盤點腳本的輸出與唯讀性，以及參考文件所依賴的 Git 行為。`evals/evals.json` 是以 agent 執行的行為案例，`evals/trigger-evals.json` 是觸發評估查詢，格式與 [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) 相容（並非 `claude plugin eval` 的格式）。
 
 各版本的變更與驗證程度請見 [CHANGELOG.md](CHANGELOG.md)。歡迎透過 Issues 提供可重現案例。
 

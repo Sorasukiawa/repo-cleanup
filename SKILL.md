@@ -3,8 +3,10 @@ name: repo-cleanup
 description: Use when the user asks to clean up, tidy, or audit a source repository, such as deciding which files, caches, build output, worktrees, or local branches are still needed; retiring finished worktrees or merged branches after preserving their work; reclaiming space inside the repository; or reviewing and organizing project documentation like README, AGENTS.md, or CLAUDE.md. Also use for read-only inventories of what can be deleted. Not for general disk cleanup outside the repository, global package caches, or maintaining installed agent tools and skills.
 license: MIT
 compatibility: Requires git. gh is optional for squash-merge evidence. scripts/survey.sh needs Bash (macOS, Linux, Git Bash, or WSL); native PowerShell steps are in references/windows.md.
+argument-hint: "[inspect only | caches | worktrees | branches | docs]"
+allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/survey.sh *), Bash(git status *), Bash(git worktree list *), Bash(git ls-files *), Bash(git rev-parse *), Bash(git rev-list *), Bash(git merge-base *), Bash(git for-each-ref *), Bash(du -sh *), Bash(df -h *)
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Repository Cleanup and Organization
@@ -33,7 +35,7 @@ Identify the host OS, active shell, actual repository root, applicable rules (AG
 
 A documentation-only task needs no size or worktree audit, and a cache cleanup needs no documentation review. Read documentation structure and relevant sections first, without loading entire histories just for cleanup.
 
-For worktree and branch inventories, `scripts/survey.sh` in this skill's directory (not the target repository) collects everything in one read-only call: `bash <skill-dir>/scripts/survey.sh --repo <repo> --base <target-ref> [--sizes]`. It never fetches or writes and does not guess the target. Its output is evidence for the rules below, not a decision. Without Bash, run the commands in the worktree reference instead.
+For worktree and branch inventories, `scripts/survey.sh` in this skill's directory (not the target repository; in Claude Code it is `${CLAUDE_SKILL_DIR}/scripts/survey.sh`) collects everything in one read-only call: `bash <skill-dir>/scripts/survey.sh --repo <repo> --base <target-ref> [--sizes]`. It never fetches or writes and does not guess the target. Its output is evidence for the rules below, not a decision. Without Bash, run the commands in the worktree reference instead.
 
 ## Establish What Each Item Is For
 

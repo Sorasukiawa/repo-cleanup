@@ -1,0 +1,14 @@
+{
+  "name": "repo-cleanup",
+  "displayName": "Repo Cleanup",
+  "version": "1.2.0",
+  "description": "Clean up a repository safely: remove regenerable caches, retire finished worktrees and merged branches after preserving their work, and review README, AGENTS.md, and CLAUDE.md for accuracy.",
+  "author": {
+    "name": "Sorasukiawa",
+    "url": "https://github.com/Sorasukiawa"
+  },
+  "homepage": "https://github.com/Sorasukiawa/repo-cleanup",
+  "repository": "https://github.com/Sorasukiawa/repo-cleanup",
+  "license": "MIT",
+  "keywords": ["git", "worktree", "branches", "cleanup", "cache", "documentation", "skill"]
+}

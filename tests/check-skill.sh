@@ -34,6 +34,33 @@ version=$(printf '%s\n' "$frontmatter" | sed -n 's/^  version: "\(.*\)"$/\1/p')
 changelog_version=$(sed -n 's/^## \([0-9][0-9.]*\).*/\1/p' CHANGELOG.md | head -n 1)
 [ "$version" = "$changelog_version" ] && pass "CHANGELOG top entry matches $version" || fail "CHANGELOG top is '$changelog_version'"
 
+allowed=$(field allowed-tools)
+if printf '%s' "$allowed" | grep -Eq 'remove|prune|branch -|clean|push|rm |reset|stash|unlock|fetch'; then
+  fail "allowed-tools pre-approves a mutating command: $allowed"
+else
+  pass "allowed-tools pre-approves read-only commands only"
+fi
+
+echo "Claude Code plugin"
+json_get() { python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(eval(sys.argv[2], {'d': d}))" "$1" "$2" 2>/dev/null; }
+if command -v python3 >/dev/null; then
+  [ "$(json_get .claude-plugin/plugin.json "d['name']")" = "$name" ] && pass "plugin.json name matches" || fail "plugin.json name"
+  [ "$(json_get .claude-plugin/plugin.json "d['version']")" = "$version" ] && pass "plugin.json version matches $version" || fail "plugin.json version differs from SKILL.md"
+  [ "$(json_get .claude-plugin/marketplace.json "d['plugins'][0]['name']")" = "$name" ] && pass "marketplace entry name matches" || fail "marketplace entry name"
+  [ "$(json_get .claude-plugin/marketplace.json "d['plugins'][0]['source']")" = . ] && pass "marketplace entry points at the repository root" || fail "marketplace entry source"
+  [ -z "$(json_get .claude-plugin/marketplace.json "d['plugins'][0].get('version', '')")" ] && pass "marketplace entry leaves version to plugin.json" || fail "marketplace entry sets its own version"
+else
+  echo "  [SKIP] python3 not available for plugin JSON checks"
+fi
+[ ! -e skills ] && [ ! -e CLAUDE.md ] && [ ! -e bin ] && pass "root-skill plugin layout (no skills/, CLAUDE.md, or bin/)" || fail "root-skill layout broken by skills/, CLAUDE.md, or bin/"
+claude_bin=${CLAUDE_BIN:-$(command -v claude || true)}
+if [ -n "$claude_bin" ]; then
+  "$claude_bin" plugin validate --strict . >/dev/null 2>&1 && pass "claude plugin validate --strict (marketplace)" || fail "claude plugin validate --strict (marketplace)"
+  "$claude_bin" plugin validate --strict .claude-plugin/plugin.json >/dev/null 2>&1 && pass "claude plugin validate --strict (plugin)" || fail "claude plugin validate --strict (plugin)"
+else
+  echo "  [SKIP] claude CLI not found; set CLAUDE_BIN to run the official plugin validator"
+fi
+
 echo "size and progressive disclosure"
 lines=$(awk 'END { print NR }' SKILL.md)
 [ "$lines" -lt 500 ] && pass "SKILL.md has $lines lines (< 500)" || fail "SKILL.md has $lines lines"
@@ -60,10 +87,11 @@ for readme in README.md README.zh-TW.md README.en.md README.ja.md; do
   grep -q '(README.md) · \[繁體中文\](README.zh-TW.md) · \[English\](README.en.md) · \[日本語\](README.ja.md)' "$readme" \
     && pass "$readme has the language switcher" || fail "$readme language switcher"
   grep -q -- '--agent claude-code' "$readme" && pass "$readme documents Claude Code install" || fail "$readme lacks Claude Code install"
+  grep -q 'plugin install repo-cleanup@repo-cleanup' "$readme" && pass "$readme documents the plugin install" || fail "$readme lacks the plugin install"
 done
 
-echo "evals"
-for json in evals/evals.json evals/trigger-evals.json; do
+echo "JSON files"
+for json in evals/evals.json evals/trigger-evals.json .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
   if command -v python3 >/dev/null; then
     python3 -m json.tool "$json" >/dev/null 2>&1 && pass "$json parses" || fail "$json does not parse"
   elif command -v node >/dev/null; then

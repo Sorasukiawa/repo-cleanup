@@ -1,0 +1,17 @@
+{
+  "name": "repo-cleanup",
+  "description": "Marketplace for the repo-cleanup skill: safe repository, worktree, branch, and documentation cleanup.",
+  "owner": {
+    "name": "Sorasukiawa",
+    "url": "https://github.com/Sorasukiawa"
+  },
+  "plugins": [
+    {
+      "name": "repo-cleanup",
+      "source": ".",
+      "description": "Clean up a repository safely: caches, worktrees, merged branches, and project documentation.",
+      "category": "development",
+      "tags": ["git", "worktree", "cleanup"]
+    }
+  ]
+}

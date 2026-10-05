@@ -8,6 +8,20 @@ Preserve useful work and keep documentation accurate, easy to find, and actionab
 
 ## Install
 
+### Claude Code plugin
+
+```bash
+claude plugin marketplace add Sorasukiawa/repo-cleanup
+```
+
+```bash
+claude plugin install repo-cleanup@repo-cleanup
+```
+
+Inside a session, `/plugin marketplace add Sorasukiawa/repo-cleanup` and `/plugin install repo-cleanup@repo-cleanup` do the same. To update later, run `claude plugin marketplace update repo-cleanup`, then `claude plugin update repo-cleanup@repo-cleanup`.
+
+### skills CLI (Codex or Claude Code)
+
 Use the [skills CLI](https://github.com/vercel-labs/skills) to install into your personal skills directory:
 
 ```bash
@@ -18,11 +32,15 @@ npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent codex --glo
 npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent claude-code --global
 ```
 
+In Claude Code, choose either the plugin or the skills CLI; installing both shows two skills with the same name.
+
+### Manual install
+
 Alternatively, download the repository and place `SKILL.md`, `references/`, `scripts/`, and `agents/` in `repo-cleanup/` under your personal skills directory (`~/.codex/skills/` for Codex, `~/.claude/skills/` for Claude Code). `tests/` and `evals/` are for maintenance only. If a skill with the same name already exists, check its source and any local customizations first.
 
 ## Use
 
-Invoke it as `$repo-cleanup` in Codex or `/repo-cleanup` in Claude Code, or just describe the task:
+Invoke it as `$repo-cleanup` in Codex. In Claude Code use `/repo-cleanup` (the plugin's full name is `/repo-cleanup:repo-cleanup`; the short form works when no other command shares the name), optionally with a scope such as `/repo-cleanup inspect only`. You can also just describe the task:
 
 ```text
 Use $repo-cleanup to organize this repository within the current goal, review README and AGENTS, fix demonstrated issues, and leave suitable content unchanged.
@@ -40,6 +58,7 @@ You can narrow the scope: “only remove build caches,” “only simplify AGENT
 - Worktree retirement passes gate checks first (in use, locked, host-managed, unsaved changes or ignored files), then merge evidence: regular merges, squash merges (the local tip must equal the PR's `headRefOid`), and detached HEAD. Codex-managed worktrees use native archival; Claude Code and desktop-app worktrees go through the host first.
 - Branches are kept by default. Deletion uses `-d` or `-D` under stated conditions and records `name sha` for restoration. `[gone]` is only a clue. Remotes and issues are never changed automatically.
 - Treats accuracy and usability as the documentation goals, with simplification as an optional means. README serves readers; AGENTS / CLAUDE.md retain durable project guidance, while phase arrangements belong in progress documents.
+- In Claude Code, the inventory script and read-only `git`, `du`, and `df` queries are pre-approved through `allowed-tools`, so an inventory does not prompt for each command. Deleting, removing, and pushing commands are not included.
 - Reports lead with a decision table (item, kind, evidence, size, proposal or result) and end with DONE or PENDING. Space cleanup reports reduced directory usage separately from increased free disk space.
 
 `scripts/survey.sh` takes a read-only inventory of every worktree and local branch in one call:
@@ -48,13 +67,15 @@ You can narrow the scope: “only remove build caches,” “only simplify AGENT
 bash ~/.codex/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
 ```
 
-For Claude Code installs the path is `~/.claude/skills/repo-cleanup/scripts/survey.sh`. `--base` is required for comparisons; the script never guesses the target branch. Its output is evidence, and the skill's rules still make the decision.
+For skills CLI installs in Claude Code the path is `~/.claude/skills/repo-cleanup/scripts/survey.sh`; as a plugin, the skill gives Claude the script's full path automatically. `--base` is required for comparisons; the script never guesses the target branch. Its output is evidence, and the skill's rules still make the decision.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
 | `SKILL.md` | English instruction entry point: modes, routing, purpose classification, common misjudgments, report format |
+| `.claude-plugin/` | Claude Code plugin and marketplace manifests; the repository root is the plugin and `SKILL.md` is its only skill |
+| `agents/openai.yaml` | Display name, summary, and default prompt in the Codex interface |
 | `references/space.md` | Cache and build-output cleanup, ecosystem cheat sheet, space measurement |
 | `references/worktrees.md` | Worktree and branch retirement: gates, merge evidence, decision table, branch deletion |
 | `references/hosts.md` | Worktrees managed by Codex, Claude Code, and the Claude desktop app |
@@ -86,7 +107,7 @@ bash tests/check-skill.sh
 bash tests/test-survey.sh
 ```
 
-`check-skill.sh` checks frontmatter, size, links, version, eval JSON, and key safety rules. `test-survey.sh` builds a fixture repository with 11 scenarios in a temporary directory and verifies the inventory script's output and read-only behavior, plus the Git behaviors the references depend on. `evals/evals.json` holds behavior cases to run with an agent, and `evals/trigger-evals.json` holds trigger queries, both compatible with [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator).
+`check-skill.sh` checks frontmatter, size, links, the version (consistent across SKILL.md, plugin.json, and CHANGELOG), JSON files, and key safety rules; with `CLAUDE_BIN` set or `claude` on PATH it also runs the official `claude plugin validate --strict`. `test-survey.sh` builds a fixture repository with 11 scenarios in a temporary directory and verifies the inventory script's output and read-only behavior, plus the Git behaviors the references depend on. `evals/evals.json` holds behavior cases to run with an agent, and `evals/trigger-evals.json` holds trigger queries, both compatible with [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) (not the `claude plugin eval` format).
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and how far it was validated. Reproducible cases are welcome in Issues.
 

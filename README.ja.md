@@ -10,6 +10,20 @@ AI コーディングエージェント向けの軽量スキルです。不要�
 
 ## インストール
 
+### Claude Code プラグイン
+
+```bash
+claude plugin marketplace add Sorasukiawa/repo-cleanup
+```
+
+```bash
+claude plugin install repo-cleanup@repo-cleanup
+```
+
+セッション内では `/plugin marketplace add Sorasukiawa/repo-cleanup` と `/plugin install repo-cleanup@repo-cleanup` でも同じ操作ができます。更新するときは `claude plugin marketplace update repo-cleanup` の後に `claude plugin update repo-cleanup@repo-cleanup` を実行します。
+
+### skills CLI（Codex または Claude Code）
+
 [skills CLI](https://github.com/vercel-labs/skills) を使い、個人用スキルディレクトリにインストールします。
 
 ```bash
@@ -20,11 +34,15 @@ npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent codex --glo
 npx skills add Sorasukiawa/repo-cleanup --skill repo-cleanup --agent claude-code --global
 ```
 
+Claude Code ではプラグインと skills CLI のどちらか一方を使ってください。両方を入れると同名のスキルが 2 つ表示されます。
+
+### 手動インストール
+
 手動の場合は、このリポジトリをダウンロードし、`SKILL.md`、`references/`、`scripts/`、`agents/` を個人用スキルディレクトリ（Codex は `~/.codex/skills/`、Claude Code は `~/.claude/skills/`）内の `repo-cleanup/` に配置してください。`tests/` と `evals/` は保守用です。同名のスキルがある場合は、入手元とローカルの変更内容を先に確認してください。
 
 ## 使い方
 
-Codex では `$repo-cleanup`、Claude Code では `/repo-cleanup` で呼び出せます。やりたいことを直接伝えることもできます。
+Codex では `$repo-cleanup` で呼び出します。Claude Code では `/repo-cleanup` を使います（プラグインとして入れた場合の正式名は `/repo-cleanup:repo-cleanup` で、同名のコマンドがなければ短い形で使えます）。`/repo-cleanup 確認のみ` のように範囲を付けることもできます。やりたいことを直接伝えることもできます。
 
 ```text
 $repo-cleanup を使って、今回の目的に沿ってリポジトリを整理し、README と AGENTS を確認してください。根拠のある問題を修正し、適切な内容はそのまま残してください。
@@ -42,6 +60,7 @@ $repo-cleanup を使って、今回の目的に沿ってリポジトリを整理
 - worktree の整理では、まず前提チェック（使用中、ロック中、ホスト管理、未保存の変更や ignored ファイル）を行い、その後マージの証拠を確認します：通常マージ、squash マージ（ローカルの tip が PR の `headRefOid` と一致すること）、detached HEAD。Codex 管理の worktree は標準のアーカイブ機能を使い、Claude Code とデスクトップアプリの worktree はまずホスト側の仕組みに任せます。
 - ブランチは既定で残します。削除する場合は `-d` と `-D` をそれぞれの条件で使い分け、復元用に `name sha` を記録します。`[gone]` は手がかりにすぎません。リモートや Issue は自動で変更しません。
 - 文書の目標は正確さと使いやすさであり、簡素化は必要に応じて使う手段です。README は読者のために、AGENTS / CLAUDE.md はプロジェクトの判断に必要な長期的な規約のために使い、段階ごとの取り決めは進捗文書に記載します。
+- Claude Code では、調査スクリプトと読み取り専用の git、`du`、`df` コマンドを `allowed-tools` で事前に許可しているため、調査中にコマンドごとの許可確認は出ません。削除、取り外し、プッシュ系のコマンドは含みません。
 - 報告は判断表（項目、種類、根拠、サイズ、提案または結果）から始め、最後に DONE か PENDING を示します。容量の整理では、ディレクトリ使用量の減少とディスク空き容量の増加を区別します。
 
 `scripts/survey.sh` を使うと、すべての worktree とローカルブランチを一度に読み取り専用で調べられます。
@@ -50,13 +69,15 @@ $repo-cleanup を使って、今回の目的に沿ってリポジトリを整理
 bash ~/.codex/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
 ```
 
-Claude Code にインストールした場合のパスは `~/.claude/skills/repo-cleanup/scripts/survey.sh` です。比較には `--base` の指定が必要で、スクリプトが対象ブランチを推測することはありません。出力は判断材料であり、最終的な判断はスキルの規則に従います。
+skills CLI で Claude Code にインストールした場合のパスは `~/.claude/skills/repo-cleanup/scripts/survey.sh` です。プラグインとして入れた場合は、スキルがスクリプトの完全なパスを自動で示します。比較には `--base` の指定が必要で、スクリプトが対象ブランチを推測することはありません。出力は判断材料であり、最終的な判断はスキルの規則に従います。
 
 ## ファイル構成
 
 | パス | 役割 |
 | --- | --- |
 | `SKILL.md` | 英語の実行指示：モード、振り分け、用途の分類、よくある誤判断、報告形式 |
+| `.claude-plugin/` | Claude Code のプラグインと marketplace のマニフェスト。リポジトリのルートがプラグインで、`SKILL.md` がその唯一のスキルです |
+| `agents/openai.yaml` | Codex の画面に表示する名前、概要、既定のプロンプト |
 | `references/space.md` | キャッシュとビルド成果物の整理、エコシステム別の早見表、容量の測定 |
 | `references/worktrees.md` | worktree とブランチの整理：前提チェック、マージの証拠、判断表、ブランチ削除 |
 | `references/hosts.md` | Codex、Claude Code、Claude デスクトップアプリが管理する worktree |
@@ -88,7 +109,7 @@ bash tests/check-skill.sh
 bash tests/test-survey.sh
 ```
 
-`check-skill.sh` は frontmatter、行数、リンク、バージョン、eval JSON、重要な安全規則を確認します。`test-survey.sh` は一時ディレクトリに 11 種類のシナリオを含むテスト用リポジトリを作成し、調査スクリプトの出力と読み取り専用であること、参考資料が前提とする Git の挙動を検証します。`evals/evals.json` はエージェントで実行する動作テスト、`evals/trigger-evals.json` は起動判定用のクエリで、いずれも [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) と互換性があります。
+`check-skill.sh` は frontmatter、行数、リンク、バージョン（SKILL.md、plugin.json、CHANGELOG の一致）、JSON ファイル、重要な安全規則を確認します。`CLAUDE_BIN` を設定するか PATH に `claude` がある場合は、公式の `claude plugin validate --strict` も実行します。`test-survey.sh` は一時ディレクトリに 11 種類のシナリオを含むテスト用リポジトリを作成し、調査スクリプトの出力と読み取り専用であること、参考資料が前提とする Git の挙動を検証します。`evals/evals.json` はエージェントで実行する動作テスト、`evals/trigger-evals.json` は起動判定用のクエリで、いずれも [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) と互換性があります（`claude plugin eval` の形式ではありません）。
 
 各バージョンの変更内容と検証範囲は [CHANGELOG.md](CHANGELOG.md) を参照してください。再現可能な事例は Issues にお寄せください。
 
