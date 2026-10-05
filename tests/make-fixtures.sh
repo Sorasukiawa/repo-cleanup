@@ -3,6 +3,7 @@
 # Usage: tests/make-fixtures.sh <new-or-empty-dir>
 # Layout: <dir>/origin.git (bare remote), <dir>/repo (main checkout), <dir>/wt/* (linked worktrees),
 #         <dir>/bin/gh (offline PR lookup stub), <dir>/env.sh (puts the stub first on PATH),
+#         <dir>/ext and <dir>/DerivedData (project outputs outside the repository),
 #         <dir>/expected.tsv (the decision each scenario should get).
 set -euo pipefail
 
@@ -144,6 +145,48 @@ commit_in "$repo" gone-unique.txt gu "feat: gone and unmerged"
 g push -q -u origin gone-unique
 g switch -q main
 
+# 12. Generated test media: large regenerable files next to small evidence; the generator is tracked.
+mkdir -p "$repo/scripts"
+cat >"$repo/scripts/generate-media.sh" <<'EOF'
+#!/usr/bin/env bash
+# Regenerates the synthetic test media used by the hour-long playback check.
+set -euo pipefail
+out=${1:-artifacts/hour-4k}
+mkdir -p "$out"
+dd if=/dev/zero of="$out/source.mov" bs=1048576 count=6 2>/dev/null
+dd if=/dev/zero of="$out/proxy.mov" bs=1048576 count=3 2>/dev/null
+EOF
+chmod +x "$repo/scripts/generate-media.sh"
+printf 'artifacts/\n' >>"$repo/.gitignore"
+(cd "$repo" && bash scripts/generate-media.sh)
+printf '{"result":"pass","frames":108000}\n' >"$repo/artifacts/hour-4k/report.json"
+printf 'export finished in 61m\n' >"$repo/artifacts/hour-4k/run.log"
+printf '<fcpxml><asset src="source.mov"/><asset src="proxy.mov"/></fcpxml>\n' >"$repo/artifacts/hour-4k/project.fcpxml"
+
+# 13. Project-owned outputs outside the repository: a Cargo target dir, per-task build dirs named in
+#     the docs, and Xcode DerivedData (current, stale, name-only, and another project's).
+ext=$out/ext
+mkdir -p "$repo/src-tauri/.cargo" "$repo/Apple/Fixture.xcodeproj" "$ext/cargo-target/debug" \
+  "$ext/task-builds/task-a/debug" "$ext/task-builds/task-b/debug" "$ext/shared-cache"
+printf '[build]\ntarget-dir = "../../ext/cargo-target"\n' >"$repo/src-tauri/.cargo/config.toml"
+printf '// fixture\n' >"$repo/Apple/Fixture.xcodeproj/project.pbxproj"
+printf '# Build\n\nParallel tasks use their own target directory:\n\n    CARGO_TARGET_DIR=%s/task-builds/<task> cargo test\n' "$ext" >"$repo/docs/build.md"
+for f in cargo-target/debug task-builds/task-a/debug task-builds/task-b/debug shared-cache; do
+  dd if=/dev/zero of="$ext/$f/blob" bs=1048576 count=1 2>/dev/null
+done
+dd_root=$out/DerivedData
+plist() { # <dir> <workspace path>
+  mkdir -p "$1/Build"
+  printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0">\n<dict>\n\t<key>WorkspacePath</key>\n\t<string>%s</string>\n</dict>\n</plist>\n' "$2" >"$1/info.plist"
+  dd if=/dev/zero of="$1/Build/blob" bs=1048576 count=1 2>/dev/null
+}
+plist "$dd_root/Fixture-current" "$repo/Apple/Fixture.xcodeproj"
+plist "$dd_root/Fixture-stale" "$repo/.worktrees/retired/Apple/Fixture.xcodeproj"
+plist "$dd_root/Other-project" "/nonexistent/Other/Other.xcodeproj"
+mkdir -p "$dd_root/Fixture-noplist/Build"
+g add .gitignore scripts/generate-media.sh src-tauri/.cargo/config.toml Apple/Fixture.xcodeproj/project.pbxproj docs/build.md
+g commit -q -m "chore: add media generator and build settings"
+
 g push -q origin main
 git -C "$out/origin.git" branch -q -D gone-merged gone-unique
 g fetch -q --prune origin
@@ -163,7 +206,7 @@ done
 if [ -n "$head" ] && [ -f "$root/prs/$head.json" ]; then cat "$root/prs/$head.json"; else echo '[]'; fi
 EOF
 chmod +x "$out/bin/gh"
-printf 'export PATH="%s/bin:$PATH"\n' "$out" >"$out/env.sh"
+printf 'export PATH="%s/bin:$PATH"\nexport REPO_CLEANUP_DERIVED_DATA="%s/DerivedData"\n' "$out" "$out" >"$out/env.sh"
 
 cat >"$out/expected.tsv" <<EOF
 item	expected	reason
@@ -186,6 +229,15 @@ repo/node_modules/	keep unless dependencies are the target	dependency install, n
 repo/debug.log	removable	ignored log file
 repo/README.md	fix	npm run start does not exist (use npm run dev); docs/setup.md is missing
 repo/docs/old-plan.md	keep or archive	completed phase plan with historical value
+repo/artifacts/hour-4k/source.mov, proxy.mov	propose deletion with size and impact	regenerable by scripts/generate-media.sh; project.fcpxml references go offline until regenerated
+repo/artifacts/hour-4k/report.json, run.log, project.fcpxml	keep	small evidence of the recorded run
+ext/cargo-target	removable when idle	project-owned Cargo target dir set in src-tauri/.cargo/config.toml
+ext/task-builds/task-a, task-b	removable when idle	per-task build dirs documented in docs/build.md
+ext/shared-cache	out of scope	not referenced by the project
+DerivedData/Fixture-current	removable when Xcode is idle	DerivedData of this repository's Apple/Fixture.xcodeproj
+DerivedData/Fixture-stale	removable	DerivedData of a workspace that no longer exists
+DerivedData/Fixture-noplist	verify ownership	name match only, no info.plist
+DerivedData/Other-project	out of scope	another project's DerivedData
 EOF
 
 echo "fixture ready: $out"

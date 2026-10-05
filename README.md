@@ -55,13 +55,14 @@ Codex 用 `$repo-cleanup`；Claude Code 用 `/repo-cleanup`（插件安装时完
 - 先判断模式：只盘点时完全只读（不 fetch、不构建、不删改）；执行时在授权范围内自主完成，待定事项最后合并成一次提问。
 - 按任务只读取需要的参考：空间清理、工作区与分支、宿主托管工作区、文档、Windows。
 - 根据引用和用途区分源码、缓存、本地机密、交付件与历史资料；忽略规则和文件年龄不直接决定删除。SKILL.md 中的「常见误判」表列出了最容易误删的情况，例如 `git worktree remove` 会连带删除 ignored 的 `.env`。
+- 按能否重新生成来判断：独有提交、未提交改动、机密和本地配置、用户制作的素材、唯一的发布包保留；构建、安装或生成器能重建的内容，即使被测试工程引用也列为候选，并写明重建方式和删除影响。≥1 GiB 的项和体积前十的项不论结论都会出现在报告里，凭判断保留的大项交给你决定，状态标为 PENDING。
 - 工作区退役先过门槛检查（在用、锁定、宿主托管、未保存的改动或 ignored 文件），再看合并证据：普通合并、squash 合并（本地 tip 必须等于 PR 的 `headRefOid`）、detached HEAD。Codex 托管工作区使用原生归档，Claude Code 和桌面端工作区优先交给宿主处理。
 - 分支默认保留；删除时 `-d` 和 `-D` 各有条件，并记录 `name sha` 以便恢复。`[gone]` 只是线索。远端和工单不会自动改动。
 - 文档以准确、易用为目标，精简只是可选手段。README 服务读者，AGENTS / CLAUDE.md 保留项目决策需要的长期约定，阶段安排放入进度文档。
 - 在 Claude Code 中，盘点脚本和只读的 git、`du`、`df` 查询已通过 `allowed-tools` 预先授权，盘点时不会逐条弹出权限确认；删除、移除、推送类命令不在其中。
 - 报告先给决策表（项目｜类型｜证据｜大小｜建议或结果），结尾标明 DONE 或 PENDING。释放空间时，目录占用减少与磁盘空闲增长分开报告。
 
-`scripts/survey.sh` 可以一次性只读盘点所有 worktree 和本地分支：
+`scripts/survey.sh` 可以一次性只读盘点所有 worktree、本地分支、忽略文件（加 `--sizes` 时按体积从大到小排列），以及仓库外的项目产物（自定义 Cargo target 目录、按任务生成的构建目录、本项目的 Xcode DerivedData）：
 
 ```bash
 bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
@@ -76,7 +77,7 @@ bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --size
 | `SKILL.md` | 英文执行入口：模式、路由、用途分类、常见误判、报告格式 |
 | `.claude-plugin/` | Claude Code 插件与 marketplace 清单；仓库根目录就是插件，`SKILL.md` 是其中唯一的 skill |
 | `agents/openai.yaml` | Codex 界面中的显示名称、简介和默认提示 |
-| `references/space.md` | 缓存与构建产物清理、各生态速查、空间统计 |
+| `references/space.md` | 清理范围（含仓库外的项目产物）、各生态速查、测试生成数据、空间统计 |
 | `references/worktrees.md` | 工作区与分支退役：门槛、合并证据、决策表、分支删除 |
 | `references/hosts.md` | Codex、Claude Code、Claude 桌面端托管的工作区 |
 | `references/docs.md` | README、AGENTS、CLAUDE.md 等文档与规则整理 |
@@ -89,7 +90,7 @@ bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --size
 ## 不做什么
 
 - 不包含自动删除程序或安装钩子；`survey.sh` 只读。
-- 不清理仓库外的缓存（Xcode DerivedData、npm / pnpm 全局缓存、Docker 等），也不维护已安装的 agent 工具或 skill。
+- 不清理与项目无关的共享缓存（npm / pnpm 全局缓存、cargo registry、Docker、模拟器运行库等），也不维护已安装的 agent 工具或 skill。项目自己放在仓库外的构建产物在清理范围内。
 - 不默认删除远端分支、修改 PR 或工单状态。
 - 不为了缩短篇幅而删除有用的文档内容。
 

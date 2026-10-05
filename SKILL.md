@@ -1,19 +1,19 @@
 ---
 name: repo-cleanup
-description: Use when the user asks to clean up, tidy, or audit a source repository, such as deciding which files, caches, build output, worktrees, or local branches are still needed; retiring finished worktrees or merged branches after preserving their work; reclaiming space inside the repository; or reviewing and organizing project documentation like README, AGENTS.md, or CLAUDE.md. Also use for read-only inventories of what can be deleted. Not for general disk cleanup outside the repository, global package caches, or maintaining installed agent tools and skills.
+description: Use when the user asks to clean up, tidy, or audit a source repository, such as deciding which files, caches, build output, worktrees, or local branches are still needed; retiring finished worktrees or merged branches after preserving their work; reclaiming space a project uses, including its own build output outside the repository such as a custom Cargo target directory or the project's Xcode DerivedData; or reviewing and organizing project documentation like README, AGENTS.md, or CLAUDE.md. Also use for read-only inventories of what can be deleted. Not for machine-wide cleanup of shared caches unrelated to the project, or maintaining installed agent tools and skills.
 license: MIT
 compatibility: Requires git. gh is optional for squash-merge evidence. scripts/survey.sh needs Bash (macOS, Linux, Git Bash, or WSL); native PowerShell steps are in references/windows.md.
 argument-hint: "[inspect only | caches | worktrees | branches | docs]"
 allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/survey.sh *), Bash(git status *), Bash(git worktree list *), Bash(git ls-files *), Bash(git rev-parse *), Bash(git rev-list *), Bash(git merge-base *), Bash(git for-each-ref *), Bash(du -sh *), Bash(df -h *)
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Repository Cleanup and Organization
 
 Keep repository contents useful and documentation accurate, easy to navigate, and actionable; reclaim unnecessary storage when requested. Use the user's language for conversation and reports; if no language is indicated, default to Simplified Chinese. Keep cleanup within the current request, without unrelated application refactoring.
 
-Deleting the wrong thing is the expensive failure here: a worktree that looks finished may hold the only copy of a secret, a note, or a later commit. Every rule below exists to keep that from happening without turning cleanup into item-by-item approval.
+Deleting the wrong thing is the expensive failure here: a worktree that looks finished may hold the only copy of a secret, a note, or a later commit. Keeping the wrong thing costs too: tens of gigabytes of regenerable output left behind, unmentioned, while the disk runs out. Both are avoided the same way: decide by whether something can be regenerated, and make every large decision visible to the user. None of this turns cleanup into item-by-item approval.
 
 ## Choose the Mode
 
@@ -27,7 +27,7 @@ Identify the host OS, active shell, actual repository root, applicable rules (AG
 
 | Task | Read |
 | --- | --- |
-| Caches, build output, large or unknown files, "what can be deleted" | [Space cleanup](references/space.md) |
+| Caches, build output (inside the repository or project-owned outside it), generated test data, large or unknown files, "what can be deleted" | [Space cleanup](references/space.md) |
 | Retiring worktrees or deleting branches | [Worktree verification](references/worktrees.md) |
 | Worktrees created by an agent host (Codex, Claude Code, the Claude desktop app) | [Host-managed worktrees](references/hosts.md), together with worktree verification |
 | README, AGENTS.md, CLAUDE.md, or other documentation and rules | [Documentation](references/docs.md) |
@@ -35,7 +35,7 @@ Identify the host OS, active shell, actual repository root, applicable rules (AG
 
 A documentation-only task needs no size or worktree audit, and a cache cleanup needs no documentation review. Read documentation structure and relevant sections first, without loading entire histories just for cleanup.
 
-For worktree and branch inventories, `scripts/survey.sh` in this skill's directory (not the target repository; in Claude Code it is `${CLAUDE_SKILL_DIR}/scripts/survey.sh`) collects everything in one read-only call: `bash <skill-dir>/scripts/survey.sh --repo <repo> --base <target-ref> [--sizes]`. It never fetches or writes and does not guess the target. Its output is evidence for the rules below, not a decision. Without Bash, run the commands in the worktree reference instead.
+For worktree and branch inventories, `scripts/survey.sh` in this skill's directory (not the target repository; in Claude Code it is `${CLAUDE_SKILL_DIR}/scripts/survey.sh`) collects everything in one read-only call: `bash <skill-dir>/scripts/survey.sh --repo <repo> --base <target-ref> [--sizes]`. It also lists project-owned outputs outside the repository (Cargo target directories, the project's Xcode DerivedData, output paths named in tracked docs or scripts) and, with `--sizes`, sorts ignored entries largest first. It never fetches or writes and does not guess the target. Its output is evidence for the rules below, not a decision. Without Bash, run the commands in the worktree reference instead.
 
 ## Establish What Each Item Is For
 
@@ -47,16 +47,19 @@ Determine purpose from entry points, imports, tests, scripts, CI, and release co
 | Regenerable caches, temporary output, intermediate build files | Verify contents and disk usage, then clean up; avoid deleting and reinstalling all development dependencies |
 | Local configuration and secrets (`.env`, `*.local`, keys, certificates) | Keep, even though they are ignored; never copy them into Git |
 | Worktrees and branches considered for retirement | Check ongoing use and reuse needs, then preserve their work through the appropriate host or ordinary Git workflow |
-| Old designs, frozen UI, progress reports, old release packages | May have historical value; archive or consolidate as requested |
+| Generated test data and media (synthetic footage, proxies, renders, exports, fixtures a script produces) | Regenerable when the generator or source remains: propose deleting the bulk with its size, how to regenerate it, and what goes offline; keep the generator and the small evidence (logs, screenshots, reports, project files) |
+| Old designs, frozen UI, progress reports, old release packages | May have historical value; archive or consolidate as requested. Large regenerable outputs stored alongside them are still candidates |
 | Outdated instructions, broken paths, inconsistent configuration | Correct using evidence from current code and confirmed product scope |
 
 Before calling a file unused, rule out the usual false positives: dynamic imports and reflection, paths in configuration, scripts, or CI, platform manifests and resource bundles (for example `Info.plist`, asset catalogs, Android resources), test fixtures, and anything loaded by string name. Unused-code tools already configured in the project, such as knip, Periphery, or vulture, are useful evidence; do not add new dependencies just for cleanup.
+
+Sort every candidate into one of two kinds. Irreplaceable: unique commits, uncommitted work, secrets and local configuration, user-made assets, and the only copy of a release. These stay unless the user decides otherwise. Regenerable: anything a build, install, script, or generator can recreate. These are candidates even when a test project references them or a report cites them; the regeneration path and what goes offline in the meantime belong in the report, not in a silent decision to keep.
 
 ## Common Misjudgments
 
 | It looks like | What is actually true |
 | --- | --- |
-| The path is in `.gitignore`, so it can go | Ignore rules are not a deletion list. `.env`, local configuration, test screenshots, acceptance evidence, and the only installer in a build directory are often ignored. |
+| The path is in `.gitignore`, so it can go | Ignore rules are not a deletion list. `.env`, local configuration, test screenshots, small acceptance evidence, and the only installer in a build directory are often ignored. |
 | `git status` is clean, so nothing would be lost | Status hides ignored files, and `git worktree remove` deletes ignored files such as `.env` without `--force`. |
 | `git clean -ndX` lists it, so it is junk | It also lists `.env` and local configuration. Use it as a candidate preview; never run `git clean -fdX` on a whole repository or worktree. |
 | The PR was merged, so the worktree is finished | A merged PR alone is not a reason to retire a worktree: check later commits, unique files, ongoing use, and reuse. |
@@ -65,12 +68,16 @@ Before calling a file unused, rule out the usual false positives: dynamic import
 | The upstream is `[gone]`, so it was merged | The remote branch was deleted. That is a candidate signal, not merge evidence. |
 | A port, process, or handle check found nothing | A failed or empty check does not prove a directory is idle. |
 | It is frozen, old, or untouched for months | Frozen does not mean unused; age is a clue, not evidence. |
+| It is acceptance evidence, so all of it stays | The evidence is the record: logs, screenshots, reports, and project files. Gigabytes of inputs and outputs that the generator can recreate are not the record; propose deleting them with the regeneration path. |
+| A test project references it, so it must stay | References going offline is an impact to report, not a veto. Say what needs regenerating before the next retest. |
+| It is outside the repository, so it is out of scope | Build output the project directs elsewhere (a Cargo `target-dir`, `-derivedDataPath`, per-task build roots, `DerivedData/<Project>-<hash>`) belongs to the project. Shared caches unrelated to it do not. |
+| Nothing is certain, so keep it and report done | Keeping is a decision too. Large items kept by judgment go to the user with size, impact, and a recommendation. |
 | The directory shrank, so free space grew by the same amount | Shared blocks, hardlinks, snapshots, and other processes can make them differ. |
 | A browser mock or unit test passes, so the app works | Do not claim real application behavior has been verified from mocks. |
 
 ## Execute Within Scope
 
-- Write an exact path list for each round of deletions, checking resolved paths and link boundaries. Do not broaden the scope with recursive globs or follow links to data outside the repository.
+- Write an exact path list for each round of deletions, checking resolved paths and link boundaries. Do not broaden the scope with recursive globs or follow links beyond the confirmed candidates.
 - Check processes or open handles for directories that builds, tests, or services may use before removing them.
 - Preserve before removing: copy needed ignored files, keep commits reachable from a branch or tag, and verify the copy. Uncertainty about one candidate does not block the others.
 - Put temporary archives in an existing locally ignored location or one the user specifies. Do not commit private material. Do not automatically delete newly saved archives after cleanup.
@@ -79,7 +86,7 @@ Before calling a file unused, rule out the usual false positives: dynamic import
 
 ## Report
 
-Write the report in the user's language. Lead with the decision table; summarize leftovers by pattern (`dist/**`, `*.tsbuildinfo`) rather than dumping file lists.
+Write the report in the user's language. Lead with the decision table; summarize leftovers by pattern (`dist/**`, `*.tsbuildinfo`) rather than dumping file lists. Every item of 1 GiB or more, and the ten largest items overall, appear in the table whatever the decision, with whether they can be regenerated and what deleting them would affect.
 
 ```text
 Scope: <what was requested>   Mode: inspect only | executed   Status: DONE | PENDING (<n> items)
@@ -89,13 +96,15 @@ Scope: <what was requested>   Mode: inspect only | executed   Status: DONE | PEN
 | dist/ | build output | ignored; rebuilt by `npm run build` | 340 MB | removed |
 | .env | local secret | ignored; only copy | 1 KB | kept |
 | wt/spike | worktree | 3 commits not in main; no PR | 4 MB | kept |
+| artifacts/hour-4k/*.mov | generated media | regenerable by scripts/generate-media.sh; FCP project goes offline | 37 GB | pending: recommend delete |
 
+Space: reclaimed <n> GiB; reclaimable after your decision <n> GiB.
 Pending: one numbered list, each with the open question or the exact command the user must run.
 Verification: what was checked and how.
 Follow-up: effects such as caches rebuilding on the next build.
 ```
 
-Use `DONE` only when every authorized action is complete and verified and nothing waits on the user; items kept on purpose do not block it. For space cleanup, report reduced directory usage separately from increased free disk space, and label estimates. Include documentation sizes only when the user cares about reduction.
+Use `DONE` only when every authorized action is complete and verified and nothing waits on the user. Items kept by a firm rule (in use, unique work, secrets, an earlier user decision) do not block it; a large item kept only by judgment does, until the user decides. For space cleanup, report reduced directory usage separately from increased free disk space, and label estimates. Include documentation sizes only when the user cares about reduction.
 
 ## Verify and Deliver
 

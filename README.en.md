@@ -55,13 +55,14 @@ You can narrow the scope: “only remove build caches,” “only simplify AGENT
 - Chooses a mode first: an inspection is strictly read-only (no fetch, build, edit, or deletion); execution completes the authorized scope on its own and collects pending items into one question at the end.
 - Reads only the references the task needs: space cleanup, worktrees and branches, host-managed worktrees, documentation, Windows.
 - Distinguishes source, caches, local secrets, deliverables, and historical material by references and purpose. Ignore rules and age alone do not justify deletion. The Common Misjudgments table in SKILL.md lists the easiest ways to delete the wrong thing, such as `git worktree remove` also deleting an ignored `.env`.
+- Decides by whether something can be regenerated. Unique commits, uncommitted work, secrets and local configuration, user-made assets, and the only copy of a release stay. Anything a build, install, or generator can recreate is a candidate even when a test project references it, with the regeneration path and the impact of deleting it. Every item of 1 GiB or more and the ten largest items appear in the report whatever the decision; large items kept only by judgment go to you, and the status stays PENDING.
 - Worktree retirement passes gate checks first (in use, locked, host-managed, unsaved changes or ignored files), then merge evidence: regular merges, squash merges (the local tip must equal the PR's `headRefOid`), and detached HEAD. Codex-managed worktrees use native archival; Claude Code and desktop-app worktrees go through the host first.
 - Branches are kept by default. Deletion uses `-d` or `-D` under stated conditions and records `name sha` for restoration. `[gone]` is only a clue. Remotes and issues are never changed automatically.
 - Treats accuracy and usability as the documentation goals, with simplification as an optional means. README serves readers; AGENTS / CLAUDE.md retain durable project guidance, while phase arrangements belong in progress documents.
 - In Claude Code, the inventory script and read-only `git`, `du`, and `df` queries are pre-approved through `allowed-tools`, so an inventory does not prompt for each command. Deleting, removing, and pushing commands are not included.
 - Reports lead with a decision table (item, kind, evidence, size, proposal or result) and end with DONE or PENDING. Space cleanup reports reduced directory usage separately from increased free disk space.
 
-`scripts/survey.sh` takes a read-only inventory of every worktree and local branch in one call:
+`scripts/survey.sh` takes a read-only inventory in one call: every worktree and local branch, ignored entries (largest first with `--sizes`), and project-owned outputs outside the repository (a custom Cargo target directory, per-task build directories, this project's Xcode DerivedData):
 
 ```bash
 bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
@@ -76,7 +77,7 @@ This is the path for a skills CLI install for Codex; use `~/.codex/skills/` or `
 | `SKILL.md` | English instruction entry point: modes, routing, purpose classification, common misjudgments, report format |
 | `.claude-plugin/` | Claude Code plugin and marketplace manifests; the repository root is the plugin and `SKILL.md` is its only skill |
 | `agents/openai.yaml` | Display name, summary, and default prompt in the Codex interface |
-| `references/space.md` | Cache and build-output cleanup, ecosystem cheat sheet, space measurement |
+| `references/space.md` | Cleanup scope (including project outputs outside the repository), ecosystem cheat sheet, generated test data, space measurement |
 | `references/worktrees.md` | Worktree and branch retirement: gates, merge evidence, decision table, branch deletion |
 | `references/hosts.md` | Worktrees managed by Codex, Claude Code, and the Claude desktop app |
 | `references/docs.md` | README, AGENTS, CLAUDE.md, and other documentation and rules |
@@ -89,7 +90,7 @@ Agents use the user's language for conversation and reports, defaulting to Simpl
 ## Non-goals
 
 - No automatic deletion program or installation hooks; `survey.sh` is read-only.
-- No cleanup of caches outside the repository (Xcode DerivedData, global npm / pnpm caches, Docker, and so on), and no maintenance of installed agent tools or skills.
+- No cleanup of shared caches unrelated to the project (global npm / pnpm caches, the cargo registry, Docker, simulator runtimes, and so on), and no maintenance of installed agent tools or skills. Build output the project keeps outside the repository is in scope.
 - No remote branch deletion or PR / issue updates by default.
 - No removal of useful documentation just to make it shorter.
 

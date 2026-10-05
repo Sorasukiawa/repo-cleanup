@@ -2,6 +2,39 @@
 
 版本号写在 `SKILL.md` 的 `metadata.version` 和 `.claude-plugin/plugin.json` 的 `version`，与本文件最上面的条目保持一致（`tests/check-skill.sh` 会检查）。Claude Code 插件按 `version` 判断更新，每次发布都要升版本号。
 
+## 1.3.0 — 2026-10-05
+
+起因：实际使用中，两次清理分别漏掉了约 20 GiB 的项目外部构建目录，以及约 48 GiB 可重新生成的合成测试媒体。前者是因为 1.2.0 把范围限定在仓库内；后者是因为验收资料默认保留，且没有要求说明体积和删除影响。worktree、机密和未提交改动的保护规则不变。
+
+### 范围
+
+- 清理范围从"仓库 + worktree"扩展为"项目产生的一切"，包括项目放在仓库外的输出：`.cargo/config.toml` 的 `target-dir`、脚本或文档里的 `CARGO_TARGET_DIR` / `--target-dir` / `-derivedDataPath`、按任务生成的构建目录，以及 `info.plist` 指向本仓库或其 worktree 的 Xcode `DerivedData/<项目>-<hash>`。
+- 与项目无关的共享缓存（npm / pnpm、cargo registry、Docker、模拟器运行库等）仍不在范围内。description 同步修改。
+
+### 判断与汇报
+
+- 新增"能否重新生成"的判断：不可替代的（独有提交、未提交改动、机密、用户素材、唯一发布包）保留；能重建的内容即使被测试工程引用、被报告引用，也列为候选，并写明重建方式和删除影响。
+- 新增"测试生成数据"一节：保留生成器、日志、截图、报告和工程文件等记录，大块媒体和数据提议删除。只读或范围较窄的任务中，把它们放进待定事项，不能默默保留。
+- 报告必须列出 ≥1 GiB 的项和体积前十的项，不论结论如何；凭判断保留的大项会让状态保持 PENDING，直到用户决定。报告新增"已释放 / 决定后还可释放"两个合计。
+- 磁盘告急（约 10 GiB 或 5 % 以下，或用户提到空间不够）时，按体积从大到小处理。
+- 常见误判表新增 4 行："是验收资料所以全留""测试工程引用所以必须留""在仓库外所以不归我管""拿不准就留着并报完成"。
+
+### 盘点脚本
+
+- `survey.sh` 新增"仓库外的项目产物"一节：Cargo `target-dir`、环境变量 `CARGO_TARGET_DIR`、已跟踪文档和脚本中写明的输出路径（带 `<task>`、`$VAR` 等占位符时列出实际存在的目录），以及按 `WorkspacePath` 精确匹配的 Xcode DerivedData。工作区已删除的会标为过期；没有 `info.plist` 的只按名称匹配，并标明需要确认。
+- 加 `--sizes` 时，忽略条目按体积从大到小排列。
+- `REPO_CLEANUP_DERIVED_DATA` 可以指定 DerivedData 根目录，供测试使用。
+
+### 测试
+
+- 夹具新增合成媒体（带生成器和小体积证据）和仓库外产物（Cargo target、按任务生成的目录、四种 DerivedData、无关的共享缓存）。
+- `test-survey.sh` 新增 10 项断言；evals 新增第 7、8 个用例和 2 条触发查询。
+
+### 验证状态
+
+- 已验证：`tests/check-skill.sh`（含 `claude plugin validate --strict`）和 `tests/test-survey.sh` 全部通过；在两个真实项目上只读试跑，能识别出 Xcode DerivedData（包括 35 个只剩日志的残留目录）。
+- 未验证：evals 行为用例仍未用 agent 运行；Linux 和 Windows 未运行。
+
 ## 1.2.0 — 2026-10-05
 
 ### Claude Code 插件

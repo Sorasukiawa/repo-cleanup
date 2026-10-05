@@ -57,13 +57,14 @@ Codex 使用 `$repo-cleanup`；Claude Code 使用 `/repo-cleanup`（以外掛安
 - 先判斷模式：僅盤點時完全唯讀（不 fetch、不建置、不刪改）；執行時在授權範圍內自主完成，待定事項最後合併成一次提問。
 - 依任務只讀取需要的參考：空間清理、工作樹與分支、宿主管理的工作樹、文件、Windows。
 - 根據引用與用途區分原始碼、快取、本機機密、交付檔案及歷史資料；忽略規則和檔案年齡不直接決定刪除。SKILL.md 的「常見誤判」表列出最容易誤刪的情況，例如 `git worktree remove` 會連帶刪除 ignored 的 `.env`。
+- 依能否重新產生來判斷：獨有提交、未提交變更、機密與本機設定、使用者製作的素材、唯一的發布包保留；建置、安裝或產生器能重建的內容，即使被測試工程引用也列為候選，並寫明重建方式與刪除影響。≥1 GiB 的項目與體積前十的項目不論結論都會出現在報告中，依判斷保留的大項交由你決定，狀態標為 PENDING。
 - 工作樹退役先通過門檻檢查（使用中、已鎖定、宿主管理、未保存的變更或 ignored 檔案），再看合併證據：一般合併、squash 合併（本機 tip 必須等於 PR 的 `headRefOid`）、detached HEAD。Codex 管理的工作樹使用原生封存，Claude Code 與桌面版的工作樹優先交由宿主處理。
 - 分支預設保留；刪除時 `-d` 與 `-D` 各有條件，並記錄 `name sha` 以便還原。`[gone]` 只是線索。遠端與議題不會自動變更。
 - 文件以準確、易用為目標，精簡僅是按需手段。README 服務讀者，AGENTS / CLAUDE.md 保留專案決策所需的長期約定，階段安排放入進度文件。
 - 在 Claude Code 中，盤點腳本與唯讀的 git、`du`、`df` 查詢已透過 `allowed-tools` 預先授權，盤點時不會逐條跳出權限確認；刪除、移除、推送類指令不在其中。
 - 報告先給決策表（項目｜類型｜證據｜大小｜建議或結果），結尾標明 DONE 或 PENDING。釋放空間時，分別回報目錄占用減少量與磁碟可用空間增量。
 
-`scripts/survey.sh` 可一次唯讀盤點所有工作樹與本機分支：
+`scripts/survey.sh` 可一次唯讀盤點所有工作樹、本機分支、忽略檔案（加上 `--sizes` 時依體積由大到小排列），以及儲存庫外的專案產物（自訂 Cargo target 目錄、依任務產生的建置目錄、本專案的 Xcode DerivedData）：
 
 ```bash
 bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --sizes
@@ -78,7 +79,7 @@ bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --size
 | `SKILL.md` | 英文執行入口：模式、路由、用途分類、常見誤判、報告格式 |
 | `.claude-plugin/` | Claude Code 外掛與 marketplace 清單；儲存庫根目錄即外掛，`SKILL.md` 是其中唯一的 skill |
 | `agents/openai.yaml` | Codex 介面中的顯示名稱、簡介與預設提示 |
-| `references/space.md` | 快取與建置產物清理、各生態速查、空間統計 |
+| `references/space.md` | 清理範圍（含儲存庫外的專案產物）、各生態速查、測試產生資料、空間統計 |
 | `references/worktrees.md` | 工作樹與分支退役：門檻、合併證據、決策表、分支刪除 |
 | `references/hosts.md` | Codex、Claude Code、Claude 桌面版管理的工作樹 |
 | `references/docs.md` | README、AGENTS、CLAUDE.md 等文件與規則整理 |
@@ -91,7 +92,7 @@ bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --size
 ## 不做什麼
 
 - 不包含自動刪除程式或安裝掛鉤；`survey.sh` 為唯讀。
-- 不清理儲存庫外的快取（Xcode DerivedData、npm / pnpm 全域快取、Docker 等），也不維護已安裝的 agent 工具或 skill。
+- 不清理與專案無關的共用快取（npm / pnpm 全域快取、cargo registry、Docker、模擬器執行環境等），也不維護已安裝的 agent 工具或 skill。專案自己放在儲存庫外的建置產物在清理範圍內。
 - 不預設刪除遠端分支或修改 PR / 議題狀態。
 - 不為縮短篇幅而刪除有用的文件內容。
 

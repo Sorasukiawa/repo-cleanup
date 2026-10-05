@@ -127,6 +127,12 @@ assert_in references/windows.md "--exclude-standard --directory" "windows.md col
 assert_in references/space.md "Never run \`git clean -fdX\`" "space.md warns against git clean -fdX"
 assert_in references/hosts.md "archive_worktree" "hosts.md keeps the Codex archive workflow"
 assert_in scripts/survey.sh "GIT_OPTIONAL_LOCKS=0" "survey.sh avoids index writes"
+assert_in SKILL.md "Irreplaceable" "SKILL.md sorts candidates by regenerability"
+assert_in SKILL.md "Every item of 1 GiB or more" "SKILL.md requires large items in the report"
+assert_in SKILL.md "a large item kept only by judgment does" "SKILL.md keeps judgment keeps out of DONE"
+assert_in references/space.md "project-owned outputs outside the repository" "space.md includes project-owned external outputs"
+assert_in references/space.md "## Generated Test Data" "space.md covers generated test data"
+assert_in scripts/survey.sh "WorkspacePath" "survey.sh matches DerivedData by workspace path"
 if grep -Eq 'git (fetch|prune|worktree (remove|prune|add|lock|unlock)|branch -[dD]|push|clean -f)' scripts/survey.sh; then
   fail "survey.sh contains a mutating Git command"
 else

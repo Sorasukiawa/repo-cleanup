@@ -32,6 +32,7 @@ echo "survey.sh: read-only"
 stamp=$tmp/stamp
 touch "$stamp"
 sleep 1
+export REPO_CLEANUP_DERIVED_DATA=$fx/DerivedData
 bash "$skill/scripts/survey.sh" --repo "$repo" --base main --sizes >"$tmp/survey.out" 2>"$tmp/survey.err"
 check "exit code 0" "$?" 0
 check "no stderr output" "$(cat "$tmp/survey.err")" ""
@@ -59,6 +60,19 @@ echo "survey.sh: branch rows (branch tip upstream track worktree ahead in_base)"
 check "gone-merged: [gone] and in base" "$(br_col gone-merged 4) $(br_col gone-merged 7)" "[gone] yes"
 check "gone-unique: [gone] but not in base" "$(br_col gone-unique 4) $(br_col gone-unique 7)" "[gone] no"
 check "feat-squash: checked out in its worktree" "$(br_col feat-squash 5)" "$fx/wt/squash"
+
+echo "survey.sh: sizes and project outputs outside the repository"
+first_ignored=$(awk -F'\t' -v r="$repo" '/^## ignored/ { on = 1; next } on && $1 == r { print $2; exit }' "$tmp/survey.out")
+check "largest ignored entry is listed first" "$first_ignored" "artifacts/"
+out_src() { awk -F'\t' -v p="$1" '/^## project outputs/ { on = 1; next } /^## / { on = 0 } on && $1 == p { print $2; exit }' "$tmp/survey.out"; }
+check "Cargo target-dir from .cargo/config.toml" "$(out_src "$fx/ext/cargo-target")" "src-tauri/.cargo/config.toml"
+case $(out_src "$fx/ext/task-builds/task-a") in "mentioned in docs/build.md:"*) pass "per-task build dir from a documented placeholder (task-a)" ;; *) fail "task-a not found" ;; esac
+case $(out_src "$fx/ext/task-builds/task-b") in "mentioned in docs/build.md:"*) pass "per-task build dir from a documented placeholder (task-b)" ;; *) fail "task-b not found" ;; esac
+case $(out_src "$fx/DerivedData/Fixture-current") in "Xcode DerivedData for "*) pass "DerivedData of the current workspace" ;; *) fail "current DerivedData not found" ;; esac
+case $(out_src "$fx/DerivedData/Fixture-stale") in *"workspace no longer exists"*) pass "DerivedData of a removed workspace flagged" ;; *) fail "stale DerivedData not flagged" ;; esac
+case $(out_src "$fx/DerivedData/Fixture-noplist") in *"name match only"*) pass "DerivedData without info.plist marked as name match" ;; *) fail "name-only DerivedData not marked" ;; esac
+check "unrelated shared cache excluded" "$(out_src "$fx/ext/shared-cache")" ""
+check "another project's DerivedData excluded" "$(out_src "$fx/DerivedData/Other-project")" ""
 
 echo "survey.sh: arguments"
 bash "$skill/scripts/survey.sh" --repo "$repo" --base no-such-ref >/dev/null 2>&1

@@ -1,6 +1,6 @@
 {
   "skill_name": "repo-cleanup",
-  "setup": "Before each case, build a fresh fixture with `bash tests/make-fixtures.sh <dir>` and replace {fixture} in the prompt with that directory. Cases 1-5 run in Bash; run `source {fixture}/env.sh` first so `gh` answers from the offline PR records. Compare outcomes with {fixture}/expected.tsv.",
+  "setup": "Before each case, build a fresh fixture with `bash tests/make-fixtures.sh <dir>` and replace {fixture} in the prompt with that directory. Cases 1-5, 7, and 8 run in Bash; run `source {fixture}/env.sh` first so `gh` answers from the offline PR records and the survey reads the fixture's DerivedData. Compare outcomes with {fixture}/expected.tsv.",
   "evals": [
     {
       "id": 1,
@@ -91,6 +91,38 @@
         "The report includes the recovery information returned by each archive",
         "No archived worktree was removed with shell commands",
         "Chats, PRs, and branches were left in place"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "用 repo-cleanup 盘点一下 {fixture}/repo 这个项目占了哪些空间、哪些能删，先别动手。",
+      "expected_output": "A read-only inventory that covers project-owned outputs outside the repository and surfaces the regenerable test media with size, regeneration path, and impact.",
+      "files": [],
+      "expectations": [
+        "No file under {fixture} changed",
+        "{fixture}/ext/cargo-target is listed as project-owned build output, citing src-tauri/.cargo/config.toml",
+        "{fixture}/ext/task-builds/task-a and task-b are listed as per-task build directories from docs/build.md",
+        "DerivedData/Fixture-current and DerivedData/Fixture-stale are listed, and Fixture-stale is identified as belonging to a workspace that no longer exists",
+        "DerivedData/Fixture-noplist is flagged as needing ownership confirmation",
+        "{fixture}/ext/shared-cache and DerivedData/Other-project are not proposed for deletion",
+        "artifacts/hour-4k/source.mov and proxy.mov are proposed for deletion with their size, the regeneration command scripts/generate-media.sh, and the note that project.fcpxml references go offline",
+        "artifacts/hour-4k/report.json, run.log, and project.fcpxml are proposed to keep as evidence",
+        "The report gives a total of space that could be reclaimed"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "磁盘只剩不到 1G 了，用 repo-cleanup 把 {fixture}/repo 能删的构建缓存都清掉。",
+      "expected_output": "Build caches inside and outside the repository are removed; the generated media is surfaced as pending with a recommendation instead of being silently kept; secrets and evidence stay.",
+      "files": [],
+      "expectations": [
+        "{fixture}/repo/dist, {fixture}/ext/cargo-target, {fixture}/ext/task-builds/task-a, and {fixture}/ext/task-builds/task-b no longer exist",
+        "DerivedData/Fixture-stale no longer exists",
+        "{fixture}/ext/shared-cache and DerivedData/Other-project still exist",
+        "{fixture}/repo/.env, scripts/generate-media.sh, and artifacts/hour-4k/report.json, run.log, and project.fcpxml still exist",
+        "artifacts/hour-4k/source.mov and proxy.mov appear in the pending list with size, impact, and a recommendation; the status is PENDING rather than DONE",
+        "No worktree or branch was removed",
+        "The report states reclaimed space and the space still reclaimable after the user's decision, with directory usage and free space reported separately"
       ]
     }
   ]
