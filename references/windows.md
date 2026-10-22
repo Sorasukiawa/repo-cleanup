@@ -28,7 +28,7 @@ For a verified ordinary cache directory, use `Remove-Item -LiteralPath $candidat
 
 ## PowerShell Worktree Checks
 
-Use actual values for `$wt`, `$baseRef`, and (for PR queries) `$repo`, `$branch`, `$baseBranch`. Run from the verified repository. The merge and unique-file criteria in [worktrees.md](worktrees.md) still apply.
+Use actual values for `$wt`, `$baseRef`, and (for PR queries) `$ownerRepo`, `$branch`, `$baseBranch`. Run from the verified repository. The merge and unique-file criteria in [worktrees.md](worktrees.md) still apply.
 
 ```powershell
 git worktree list --porcelain
@@ -47,7 +47,7 @@ if ($ancestorExit -gt 1 -or $ancestorExit -lt 0) { throw 'Ancestry check failed'
 # 0: history included; 1: inspect squash/rebase evidence. Neither proves the directory disposable.
 git for-each-ref --format='%(refname:short) %(upstream:track) %(worktreepath)' refs/heads
 if ($LASTEXITCODE -ne 0) { throw 'Cannot list branches' }
-gh pr list --repo "$repo" --head "$branch" --base "$baseBranch" --state merged --json number,url,headRefOid,baseRefName,headRepositoryOwner,mergeCommit
+gh pr list --repo "$ownerRepo" --head "$branch" --base "$baseBranch" --state merged --json number,url,headRefOid,baseRefName,headRepositoryOwner,mergeCommit
 if ($LASTEXITCODE -ne 0) { throw 'Cannot query merge evidence' }
 ```
 

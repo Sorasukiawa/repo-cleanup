@@ -110,7 +110,7 @@ bash tests/check-skill.sh
 bash tests/test-survey.sh
 ```
 
-`check-skill.sh` は frontmatter、行数、リンク、バージョン（SKILL.md、plugin.json、CHANGELOG の一致）、JSON ファイル、重要な安全規則を確認します。`CLAUDE_BIN` を設定するか PATH に `claude` がある場合は、公式の `claude plugin validate --strict` も実行します。`test-survey.sh` は一時ディレクトリに 11 種類のシナリオを含むテスト用リポジトリを作成し、調査スクリプトの出力と読み取り専用であること、参考資料が前提とする Git の挙動を検証します。`evals/evals.json` はエージェントで実行する動作テスト、`evals/trigger-evals.json` は起動判定用のクエリで、いずれも [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) と互換性があります（`claude plugin eval` の形式ではありません）。
+`check-skill.sh` は frontmatter、行数、リンク、バージョン（SKILL.md、plugin.json、CHANGELOG の一致）、JSON ファイル、重要な安全規則を確認します。`CLAUDE_BIN` を設定するか PATH に `claude` がある場合は、公式の `claude plugin validate --strict` も実行します。`test-survey.sh` は一時ディレクトリに 13 種類のシナリオを含むテスト用リポジトリを作成し、調査スクリプトの出力と読み取り専用であること、参考資料が前提とする Git の挙動を検証します。`evals/evals.json` はエージェントで実行する動作テスト、`evals/trigger-evals.json` は起動判定用のクエリで、いずれも [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) と互換性があります（`claude plugin eval` の形式ではありません）。
 
 各バージョンの変更内容と検証範囲は [CHANGELOG.md](CHANGELOG.md) を参照してください。再現可能な事例は Issues にお寄せください。
 

@@ -2,6 +2,26 @@
 
 版本号写在 `SKILL.md` 的 `metadata.version` 和 `.claude-plugin/plugin.json` 的 `version`，与本文件最上面的条目保持一致（`tests/check-skill.sh` 会检查）。Claude Code 插件按 `version` 判断更新，每次发布都要升版本号。
 
+## 1.3.1 — 2026-10-22
+
+### 盘点脚本与测试
+
+- `survey.sh` 修复含空格路径（如 macOS 宿主环境下的 `Application Support` 临时目录）与 `.cargo/config.toml` 行内注释的解析问题，支持引号包裹的含空格路径。
+- `survey.sh --sizes` 在测算体积前优先排列目录项（`/$`），并将测算上限从 200 提升至 500，避免零散忽略文件过多时漏掉字母序靠后的大目录。
+- `survey.sh` 支持识别已退役的仓库外部（同级）worktree 遗留的 Xcode DerivedData，修复 DerivedData 空目录遍历与 `base` 变量名遮蔽问题，并支持直接对 bare 仓库运行。
+- `make-fixtures.sh` 与 `test-survey.sh` 新增对外部已退役 worktree DerivedData、TOML 行尾注释及 bare 仓库的回归测试。
+
+### 规则与文档
+
+- `SKILL.md` 的 `allowed-tools` 补充 `git -C *` 只读子命令、`git log`、`gh pr list` 及无参 `survey.sh` 预授权。
+- `worktrees.md` 与 `windows.md` 将 `gh pr list --repo` 占位符明确为 `$owner_repo` / `$ownerRepo`，避免与本地目录路径混淆。
+- `space.md` 生态速查表补充 Go、C/C++（CMake）和 Dart/Flutter 的常见项目级可再生目录与保留项说明。
+- 四语 README 的夹具场景数统一更新为 13 种。
+
+### 验证状态
+
+- 已验证：`tests/check-skill.sh`（含 `claude plugin validate --strict`）和 `tests/test-survey.sh` 在 `TMPDIR` 含空格的环境下全部通过。
+
 ## 1.3.0 — 2026-10-05
 
 起因：实际使用中，两次清理分别漏掉了约 20 GiB 的项目外部构建目录，以及约 48 GiB 可重新生成的合成测试媒体。前者是因为 1.2.0 把范围限定在仓库内；后者是因为验收资料默认保留，且没有要求说明体积和删除影响。worktree、机密和未提交改动的保护规则不变。

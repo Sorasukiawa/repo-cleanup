@@ -108,7 +108,7 @@ bash tests/check-skill.sh
 bash tests/test-survey.sh
 ```
 
-`check-skill.sh` checks frontmatter, size, links, the version (consistent across SKILL.md, plugin.json, and CHANGELOG), JSON files, and key safety rules; with `CLAUDE_BIN` set or `claude` on PATH it also runs the official `claude plugin validate --strict`. `test-survey.sh` builds a fixture repository with 11 scenarios in a temporary directory and verifies the inventory script's output and read-only behavior, plus the Git behaviors the references depend on. `evals/evals.json` holds behavior cases to run with an agent, and `evals/trigger-evals.json` holds trigger queries, both compatible with [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) (not the `claude plugin eval` format).
+`check-skill.sh` checks frontmatter, size, links, the version (consistent across SKILL.md, plugin.json, and CHANGELOG), JSON files, and key safety rules; with `CLAUDE_BIN` set or `claude` on PATH it also runs the official `claude plugin validate --strict`. `test-survey.sh` builds a fixture repository with 13 scenarios in a temporary directory and verifies the inventory script's output and read-only behavior, plus the Git behaviors the references depend on. `evals/evals.json` holds behavior cases to run with an agent, and `evals/trigger-evals.json` holds trigger queries, both compatible with [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) (not the `claude plugin eval` format).
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and how far it was validated. Reproducible cases are welcome in Issues.
 

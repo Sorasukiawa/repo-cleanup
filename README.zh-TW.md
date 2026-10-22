@@ -110,7 +110,7 @@ bash tests/check-skill.sh
 bash tests/test-survey.sh
 ```
 
-`check-skill.sh` 檢查 frontmatter、行數、連結、版本號（SKILL.md、plugin.json、CHANGELOG 三處一致）、JSON 檔案與關鍵安全規則；設定 `CLAUDE_BIN` 或 PATH 中有 `claude` 時，也會執行官方的 `claude plugin validate --strict`。`test-survey.sh` 在暫存目錄產生含 11 種情境的夾具儲存庫，驗證盤點腳本的輸出與唯讀性，以及參考文件所依賴的 Git 行為。`evals/evals.json` 是以 agent 執行的行為案例，`evals/trigger-evals.json` 是觸發評估查詢，格式與 [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) 相容（並非 `claude plugin eval` 的格式）。
+`check-skill.sh` 檢查 frontmatter、行數、連結、版本號（SKILL.md、plugin.json、CHANGELOG 三處一致）、JSON 檔案與關鍵安全規則；設定 `CLAUDE_BIN` 或 PATH 中有 `claude` 時，也會執行官方的 `claude plugin validate --strict`。`test-survey.sh` 在暫存目錄產生含 13 種情境的夾具儲存庫，驗證盤點腳本的輸出與唯讀性，以及參考文件所依賴的 Git 行為。`evals/evals.json` 是以 agent 執行的行為案例，`evals/trigger-evals.json` 是觸發評估查詢，格式與 [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) 相容（並非 `claude plugin eval` 的格式）。
 
 各版本的變更與驗證程度請見 [CHANGELOG.md](CHANGELOG.md)。歡迎透過 Issues 提供可重現案例。
 

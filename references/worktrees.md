@@ -43,7 +43,7 @@ Do not run fetch or prune during a read-only inventory, and say that remote-trac
 **Squash or rebase merges.** When the ancestry check fails, inspect merge records on the hosting platform. For GitHub:
 
 ```bash
-gh pr list --repo "$repo" --head "$branch" --base "$base_branch" --state merged \
+gh pr list --repo "$owner_repo" --head "$branch" --base "$base_branch" --state merged \
   --json number,url,headRefOid,baseRefName,headRepositoryOwner,mergeCommit
 ```
 

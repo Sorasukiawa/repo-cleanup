@@ -70,6 +70,7 @@ case $(out_src "$fx/ext/task-builds/task-a") in "mentioned in docs/build.md:"*) 
 case $(out_src "$fx/ext/task-builds/task-b") in "mentioned in docs/build.md:"*) pass "per-task build dir from a documented placeholder (task-b)" ;; *) fail "task-b not found" ;; esac
 case $(out_src "$fx/DerivedData/Fixture-current") in "Xcode DerivedData for "*) pass "DerivedData of the current workspace" ;; *) fail "current DerivedData not found" ;; esac
 case $(out_src "$fx/DerivedData/Fixture-stale") in *"workspace no longer exists"*) pass "DerivedData of a removed workspace flagged" ;; *) fail "stale DerivedData not flagged" ;; esac
+case $(out_src "$fx/DerivedData/Fixture-stale-ext") in *"workspace no longer exists"*) pass "DerivedData of a removed external worktree flagged" ;; *) fail "stale external DerivedData not flagged" ;; esac
 case $(out_src "$fx/DerivedData/Fixture-noplist") in *"name match only"*) pass "DerivedData without info.plist marked as name match" ;; *) fail "name-only DerivedData not marked" ;; esac
 check "unrelated shared cache excluded" "$(out_src "$fx/ext/shared-cache")" ""
 check "another project's DerivedData excluded" "$(out_src "$fx/DerivedData/Other-project")" ""
@@ -79,6 +80,8 @@ bash "$skill/scripts/survey.sh" --repo "$repo" --base no-such-ref >/dev/null 2>&
 check "unresolvable --base exits 2" "$?" 2
 bash "$skill/scripts/survey.sh" --repo "$tmp" >/dev/null 2>&1
 check "non-repository exits 2" "$?" 2
+bash "$skill/scripts/survey.sh" --repo "$fx/origin.git" --base main >/dev/null 2>&1
+check "bare repository exits 0" "$?" 0
 nobase=$(bash "$skill/scripts/survey.sh" --repo "$repo")
 printf '%s\n' "$nobase" | grep -q '^base	(not set' && pass "no --base: target is not guessed" || fail "no --base: unexpected base line"
 

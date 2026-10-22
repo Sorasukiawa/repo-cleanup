@@ -4,9 +4,9 @@ description: Use when the user asks to clean up, tidy, or audit a source reposit
 license: MIT
 compatibility: Requires git. gh is optional for squash-merge evidence. scripts/survey.sh needs Bash (macOS, Linux, Git Bash, or WSL); native PowerShell steps are in references/windows.md.
 argument-hint: "[inspect only | caches | worktrees | branches | docs]"
-allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/survey.sh *), Bash(git status *), Bash(git worktree list *), Bash(git ls-files *), Bash(git rev-parse *), Bash(git rev-list *), Bash(git merge-base *), Bash(git for-each-ref *), Bash(du -sh *), Bash(df -h *)
+allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/survey.sh *), Bash(bash ${CLAUDE_SKILL_DIR}/scripts/survey.sh), Bash(git status *), Bash(git -C * status *), Bash(git worktree list *), Bash(git -C * worktree list *), Bash(git ls-files *), Bash(git -C * ls-files *), Bash(git rev-parse *), Bash(git -C * rev-parse *), Bash(git rev-list *), Bash(git -C * rev-list *), Bash(git merge-base *), Bash(git -C * merge-base *), Bash(git for-each-ref *), Bash(git -C * for-each-ref *), Bash(git log *), Bash(git -C * log *), Bash(gh pr list *), Bash(du -sh *), Bash(df -h *)
 metadata:
-  version: "1.3.0"
+  version: "1.3.1"
 ---
 
 # Repository Cleanup and Organization
