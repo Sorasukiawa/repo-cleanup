@@ -52,11 +52,48 @@ if command -v python3 >/dev/null; then
 else
   echo "  [SKIP] python3 not available for plugin JSON checks"
 fi
-[ ! -e skills ] && [ ! -e CLAUDE.md ] && [ ! -e bin ] && pass "root-skill plugin layout (no skills/, CLAUDE.md, or bin/)" || fail "root-skill layout broken by skills/, CLAUDE.md, or bin/"
+[ ! -e skills ] && [ ! -e bin ] && pass "root-skill plugin layout (no skills/ or bin/)" || fail "root-skill layout broken by skills/ or bin/"
+if [ -e CLAUDE.md ]; then
+  [ -f AGENTS.md ] && [ "$(cat CLAUDE.md)" = '@AGENTS.md' ] \
+    && pass "CLAUDE.md imports the existing project rules only" \
+    || fail "CLAUDE.md must contain only @AGENTS.md and the target must exist"
+fi
 claude_bin=${CLAUDE_BIN:-$(command -v claude || true)}
 if [ -n "$claude_bin" ]; then
-  "$claude_bin" plugin validate --strict . >/dev/null 2>&1 && pass "claude plugin validate --strict (marketplace)" || fail "claude plugin validate --strict (marketplace)"
-  "$claude_bin" plugin validate --strict .claude-plugin/plugin.json >/dev/null 2>&1 && pass "claude plugin validate --strict (plugin)" || fail "claude plugin validate --strict (plugin)"
+  # CLAUDE.md is a development-only import, already checked above. The plugin
+  # runtime ignores it and the official validator warns when it is at the root.
+  # Validate every other file unchanged in an isolated package, keeping strict
+  # validation for manifests and unknown warnings instead of weakening it.
+  validation_tmp=$(mktemp -d "${TMPDIR:-/tmp}/repo-cleanup-validate.XXXXXX") || exit 1
+  trap 'rm -rf "$validation_tmp"' EXIT
+  validation_root=$validation_tmp/repo-cleanup
+  if python3 - "$root" "$validation_root" <<'PY'
+import shutil
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1])
+shutil.copytree(source, sys.argv[2], symlinks=True,
+                ignore=lambda path, names: ['.git', 'CLAUDE.md'] if Path(path) == source else [])
+PY
+  then
+    validate_plugin() {
+      target=$1
+      label=$2
+      if "$claude_bin" plugin validate --strict "$target" >"$validation_tmp/output.log" 2>&1; then
+        pass "claude plugin validate --strict ($label)"
+      else
+        cat "$validation_tmp/output.log"
+        fail "claude plugin validate --strict ($label)"
+      fi
+    }
+    validate_plugin "$validation_root" marketplace
+    validate_plugin "$validation_root/.claude-plugin/plugin.json" plugin
+  else
+    fail "could not prepare an unchanged plugin package for validation"
+  fi
+  rm -rf "$validation_tmp"
+  trap - EXIT
 else
   echo "  [SKIP] claude CLI not found; set CLAUDE_BIN to run the official plugin validator"
 fi
