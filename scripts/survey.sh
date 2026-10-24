@@ -9,7 +9,7 @@
 set -u
 export GIT_OPTIONAL_LOCKS=0 LC_ALL=C
 
-repo=. base= sizes=0
+repo=. base='' sizes=0
 while [ $# -gt 0 ]; do
   case $1 in
     --repo) repo=${2:?--repo needs a path}; shift 2 ;;
@@ -132,7 +132,7 @@ EOF
 expand_path() { # $1 raw token, $2 base dir for relative paths; prints absolute paths that exist
   local raw=$1 prefix
   raw=${raw#\"}; raw=${raw%\"}; raw=${raw#\'}; raw=${raw%\'}
-  case $raw in "~/"*) raw=$HOME/${raw#\~/} ;; esac
+  case $raw in \~/*) raw=$HOME/${raw#\~/} ;; esac
   raw=${raw//\$\{HOME\}/$HOME}; raw=${raw//\$HOME/$HOME}
   raw=${raw//\$\{TMPDIR\}/${TMPDIR:-/tmp}}; raw=${raw//\$TMPDIR/${TMPDIR:-/tmp}}
   case $raw in /*) ;; *) raw=$2/$raw ;; esac
