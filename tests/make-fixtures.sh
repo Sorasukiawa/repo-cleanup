@@ -164,13 +164,13 @@ printf 'export finished in 61m\n' >"$repo/artifacts/hour-4k/run.log"
 printf '<fcpxml><asset src="source.mov"/><asset src="proxy.mov"/></fcpxml>\n' >"$repo/artifacts/hour-4k/project.fcpxml"
 
 # 13. Project-owned outputs outside the repository: a Cargo target dir, per-task build dirs named in
-#     the docs, and Xcode DerivedData (current, stale, name-only, and another project's).
+#     the docs, and Xcode DerivedData (current, stale inside repo, stale external worktree, name-only, and another project's).
 ext=$out/ext
 mkdir -p "$repo/src-tauri/.cargo" "$repo/Apple/Fixture.xcodeproj" "$ext/cargo-target/debug" \
   "$ext/task-builds/task-a/debug" "$ext/task-builds/task-b/debug" "$ext/shared-cache"
-printf '[build]\ntarget-dir = "../../ext/cargo-target"\n' >"$repo/src-tauri/.cargo/config.toml"
+printf '[build]\ntarget-dir = "../../ext/cargo-target" # custom project target dir\n' >"$repo/src-tauri/.cargo/config.toml"
 printf '// fixture\n' >"$repo/Apple/Fixture.xcodeproj/project.pbxproj"
-printf '# Build\n\nParallel tasks use their own target directory:\n\n    CARGO_TARGET_DIR=%s/task-builds/<task> cargo test\n' "$ext" >"$repo/docs/build.md"
+printf '# Build\n\nParallel tasks use their own target directory:\n\n    CARGO_TARGET_DIR="%s/task-builds/<task>" cargo test\n' "$ext" >"$repo/docs/build.md"
 for f in cargo-target/debug task-builds/task-a/debug task-builds/task-b/debug shared-cache; do
   dd if=/dev/zero of="$ext/$f/blob" bs=1048576 count=1 2>/dev/null
 done
@@ -182,6 +182,7 @@ plist() { # <dir> <workspace path>
 }
 plist "$dd_root/Fixture-current" "$repo/Apple/Fixture.xcodeproj"
 plist "$dd_root/Fixture-stale" "$repo/.worktrees/retired/Apple/Fixture.xcodeproj"
+plist "$dd_root/Fixture-stale-ext" "$out/wt/retired/Apple/Fixture.xcodeproj"
 plist "$dd_root/Other-project" "/nonexistent/Other/Other.xcodeproj"
 mkdir -p "$dd_root/Fixture-noplist/Build"
 g add .gitignore scripts/generate-media.sh src-tauri/.cargo/config.toml Apple/Fixture.xcodeproj/project.pbxproj docs/build.md
@@ -236,6 +237,7 @@ ext/task-builds/task-a, task-b	removable when idle	per-task build dirs documente
 ext/shared-cache	out of scope	not referenced by the project
 DerivedData/Fixture-current	removable when Xcode is idle	DerivedData of this repository's Apple/Fixture.xcodeproj
 DerivedData/Fixture-stale	removable	DerivedData of a workspace that no longer exists
+DerivedData/Fixture-stale-ext	removable	DerivedData of a retired external worktree that no longer exists
 DerivedData/Fixture-noplist	verify ownership	name match only, no info.plist
 DerivedData/Other-project	out of scope	another project's DerivedData
 EOF

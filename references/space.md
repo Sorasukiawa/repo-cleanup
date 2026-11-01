@@ -45,6 +45,9 @@ Prefer the project's own clean script, then the tool's clean command, over manua
 | Rust | `target/`, or the project's custom `target-dir` and per-task target directories | `cargo clean`, `cargo clean --target-dir <dir>` | A full rebuild can take long; mention the cost. Keep a release build that is the only copy of a deliverable |
 | Swift / Xcode | `.build/` (SwiftPM), project-local `build/`, a custom `-derivedDataPath`, and this project's `DerivedData/<Project>-<hash>` | `swift package clean`, `xcodebuild clean` | `Pods/` only when `Podfile.lock` exists and pods are not committed; `*.xcarchive` and `.ipa` may be the only release build. DerivedData of a workspace that no longer exists is stale |
 | JVM / Android | `build/`, `app/build/`, project `.gradle/` | `./gradlew clean` | `local.properties`, keystores, and signing files stay |
+| Go | `bin/`, `dist/`, coverage profiles (`*.out`, `coverage.html`) | Project clean target | `go clean -cache` / `-modcache` affect machine-wide shared caches and stay out of scope |
+| C / C++ | `build/`, `cmake-build-*/`, `out/`, `.cache/clangd/` | `cmake --build <dir> --target clean` | Prebuilt third-party libraries (`vendor/`, `third_party/`) and release binaries stay |
+| Dart / Flutter | `.dart_tool/`, `build/`, `.flutter-plugins-dependencies` | `flutter clean` | Platform signing configs and committed assets stay |
 | General | `tmp/`, `.cache/`, `*.log` | | Release packages, installers, screenshots or JSON read by tests, and small acceptance evidence |
 
 Keep source code and dependencies still needed. Prioritize large caches over historical documents that save only a few KB.

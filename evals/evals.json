@@ -102,7 +102,7 @@
         "No file under {fixture} changed",
         "{fixture}/ext/cargo-target is listed as project-owned build output, citing src-tauri/.cargo/config.toml",
         "{fixture}/ext/task-builds/task-a and task-b are listed as per-task build directories from docs/build.md",
-        "DerivedData/Fixture-current and DerivedData/Fixture-stale are listed, and Fixture-stale is identified as belonging to a workspace that no longer exists",
+        "DerivedData/Fixture-current, DerivedData/Fixture-stale, and DerivedData/Fixture-stale-ext are listed, and Fixture-stale and Fixture-stale-ext are identified as belonging to workspaces that no longer exist",
         "DerivedData/Fixture-noplist is flagged as needing ownership confirmation",
         "{fixture}/ext/shared-cache and DerivedData/Other-project are not proposed for deletion",
         "artifacts/hour-4k/source.mov and proxy.mov are proposed for deletion with their size, the regeneration command scripts/generate-media.sh, and the note that project.fcpxml references go offline",
@@ -117,7 +117,7 @@
       "files": [],
       "expectations": [
         "{fixture}/repo/dist, {fixture}/ext/cargo-target, {fixture}/ext/task-builds/task-a, and {fixture}/ext/task-builds/task-b no longer exist",
-        "DerivedData/Fixture-stale no longer exists",
+        "DerivedData/Fixture-stale and DerivedData/Fixture-stale-ext no longer exist",
         "{fixture}/ext/shared-cache and DerivedData/Other-project still exist",
         "{fixture}/repo/.env, scripts/generate-media.sh, and artifacts/hour-4k/report.json, run.log, and project.fcpxml still exist",
         "artifacts/hour-4k/source.mov and proxy.mov appear in the pending list with size, impact, and a recommendation; the status is PENDING rather than DONE",

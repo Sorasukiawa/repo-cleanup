@@ -20,7 +20,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-top=$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null) || { echo "survey.sh: not inside a Git work tree: $repo" >&2; exit 2; }
+if ! top=$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null); then
+  if [ "$(git -C "$repo" rev-parse --is-bare-repository 2>/dev/null)" = true ]; then
+    top=$(cd "$(git -C "$repo" rev-parse --git-dir 2>/dev/null)" && pwd -P) || exit 2
+  else
+    echo "survey.sh: not inside a Git work tree: $repo" >&2
+    exit 2
+  fi
+fi
 base_sha=
 if [ -n "$base" ]; then
   base_sha=$(git -C "$top" rev-parse --verify --quiet "$base^{commit}") || { echo "survey.sh: cannot resolve --base $base" >&2; exit 2; }
@@ -104,10 +111,12 @@ while IFS=$US read -r path _ ref _; do
   entries=$(git -C "$path" ls-files --others --ignored --exclude-standard --directory 2>/dev/null) || continue
   [ -n "$entries" ] || continue
   if [ $sizes -eq 1 ]; then
-    printf '%s\n' "$entries" | head -n 200 | while IFS= read -r entry; do
-      kb=$(du -sk -- "$path/$entry" 2>/dev/null | awk '{ print $1 }')
-      printf '%s\t%s\t%sK\n' "$path" "$entry" "${kb:-0}"
-    done | sort -t "$(printf '\t')" -k3,3nr | head -n 50
+    { printf '%s\n' "$entries" | grep '/$' || true; printf '%s\n' "$entries" | grep -v '/$' || true; } |
+      head -n 500 | while IFS= read -r entry; do
+        [ -n "$entry" ] || continue
+        kb=$(du -sk -- "$path/$entry" 2>/dev/null | awk '{ print $1 }')
+        printf '%s\t%s\t%sK\n' "$path" "$entry" "${kb:-0}"
+      done | sort -t "$(printf '\t')" -k3,3nr | head -n 50
   else
     printf '%s\n' "$entries" | head -n 50 | P=$path awk '{ print ENVIRON["P"] "\t" $0 }'
   fi
@@ -120,6 +129,7 @@ EOF
 # Project-owned outputs outside the repository: Cargo target dirs, Xcode DerivedData for this
 # project's workspaces, and output paths named in tracked docs or scripts.
 inside_repo() {
+  case $1 in "$top"|"$top"/*) return 0 ;; esac
   local wt
   while IFS=$US read -r wt _; do
     [ -n "$wt" ] || continue
@@ -130,7 +140,7 @@ EOF
   return 1
 }
 expand_path() { # $1 raw token, $2 base dir for relative paths; prints absolute paths that exist
-  local raw=$1 prefix
+  local raw="$1" prefix
   raw=${raw#\"}; raw=${raw%\"}; raw=${raw#\'}; raw=${raw%\'}
   case $raw in \~/*) raw=$HOME/${raw#\~/} ;; esac
   raw=${raw//\$\{HOME\}/$HOME}; raw=${raw//\$HOME/$HOME}
@@ -158,7 +168,16 @@ EOF
 fi
 while IFS= read -r cfg; do
   [ -n "$cfg" ] || continue
-  dir=$(sed -n 's/^[[:space:]]*target-dir[[:space:]]*=[[:space:]]*//p' "$cfg" | head -n 1)
+  dir=$(awk '
+    /^[[:space:]]*target-dir[[:space:]]*=/ {
+      val = substr($0, index($0, "=") + 1)
+      sub(/^[[:space:]]+/, "", val)
+      if (val ~ /^"/) { sub(/^"/, "", val); sub(/".*$/, "", val); print val; exit }
+      if (val ~ /^\047/) { sub(/^\047/, "", val); sub(/\047.*$/, "", val); print val; exit }
+      sub(/[[:space:]#].*$/, "", val)
+      print val; exit
+    }
+  ' "$cfg")
   [ -n "$dir" ] || continue
   found=$(expand_path "$dir" "$(dirname "$(dirname "$cfg")")")
   while IFS= read -r p; do [ -n "$p" ] && add_output "$p" "${cfg#$top/}"; done <<EOF
@@ -171,7 +190,15 @@ mentions=$(git -C "$top" grep -nE -- '(CARGO_TARGET_DIR=|--target-dir[ =]|-deriv
 while IFS= read -r line; do
   [ -n "$line" ] || continue
   where=${line%%:*}:$(printf '%s' "${line#*:}" | cut -d: -f1)
-  token=$(printf '%s' "$line" | sed -nE 's/.*(CARGO_TARGET_DIR=|--target-dir[ =]|-derivedDataPath[ =])["'\'']?([^ "'\''`;)|&]+).*/\2/p')
+  token=$(printf '%s\n' "$line" | awk '
+    match($0, /(CARGO_TARGET_DIR=|--target-dir[ =]|-derivedDataPath[ =])/) {
+      rest = substr($0, RSTART + RLENGTH)
+      if (rest ~ /^"/) { sub(/^"/, "", rest); sub(/".*$/, "", rest); print rest; exit }
+      if (rest ~ /^\047/) { sub(/^\047/, "", rest); sub(/\047.*$/, "", rest); print rest; exit }
+      sub(/[[:space:]"\047`;)|&].*$/, "", rest)
+      print rest; exit
+    }
+  ')
   [ -n "$token" ] || continue
   found=$(expand_path "$token" "$top")
   while IFS= read -r p; do [ -n "$p" ] && add_output "$p" "mentioned in $where"; done <<EOF
@@ -193,6 +220,7 @@ $records
 EOF
 )
   for dd in "$dd_root"/*/; do
+    [ -d "$dd" ] || continue
     dd=${dd%/}
     ws=
     if [ -f "$dd/info.plist" ]; then
@@ -200,13 +228,17 @@ EOF
         ws=$(awk '/<key>WorkspacePath<\/key>/ { getline; gsub(/.*<string>|<\/string>.*/, ""); print; exit }' "$dd/info.plist")
     fi
     if [ -n "$ws" ]; then
-      case $ws in "$top"/*) ;; *) inside_repo "$ws" || continue ;; esac
-      [ -e "$ws" ] && note="Xcode DerivedData for $ws" || note="Xcode DerivedData; workspace no longer exists: $ws"
-      add_output "$dd" "$note"
+      ws_name=${ws##*/}; ws_name=${ws_name%.xcodeproj}; ws_name=${ws_name%.xcworkspace}
+      if inside_repo "$ws"; then
+        [ -e "$ws" ] && note="Xcode DerivedData for $ws" || note="Xcode DerivedData; workspace no longer exists: $ws"
+        add_output "$dd" "$note"
+      elif [ ! -e "$ws" ] && [ -n "$ws_name" ] && printf '%s\n' "$names" | grep -Fxq -- "$ws_name"; then
+        add_output "$dd" "Xcode DerivedData; workspace no longer exists: $ws"
+      fi
     else
-      base=${dd##*/}
+      dd_name=${dd##*/}
       while IFS= read -r n; do
-        [ -n "$n" ] && case $base in "$n"-*) add_output "$dd" "Xcode DerivedData; name match only (no info.plist)" ;; esac
+        [ -n "$n" ] && case $dd_name in "$n"-*) add_output "$dd" "Xcode DerivedData; name match only (no info.plist)" ;; esac
       done <<EOF
 $names
 EOF
