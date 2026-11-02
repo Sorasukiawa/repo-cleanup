@@ -66,7 +66,8 @@ Sort every candidate into one of two kinds. Irreplaceable: unique commits, uncom
 | The branch is not an ancestor, so it is unmerged | It may have been squash-merged or rebased; look for hosting evidence first. |
 | A merged PR exists, so the branch can go | Only if the local tip equals the PR's `headRefOid` and the merge commit is in the target. Otherwise later work exists. |
 | The upstream is `[gone]`, so it was merged | The remote branch was deleted. That is a candidate signal, not merge evidence. |
-| A port, process, or handle check found nothing | A failed or empty check does not prove a directory is idle. |
+| A port, process, or handle check found nothing | A failed or empty check does not prove a directory is idle. Another AI session (Codex / Claude Code / Antigravity) may be between turns and about to read ignored artifacts (`distribution/artifacts/`, `target/`, test payloads) in that worktree. If a worktree has recent activity (within 48h), uncommitted changes, or an unarchived AI thread, exempt the **entire worktree** (including its ignored build/artifact directories). |
+| Moving files to local Trash is a safe test to see if anything breaks | Moving files out of their original path breaks any active session reading that path immediately, and local `~/.Trash` stays on the same volume so it frees zero bytes on a full disk. Instead, exempt active worktrees entirely, and stage idle project artifacts/worktrees to an external-drive quarantine directory (e.g. `/Volumes/Sora2T/.Cleanup_Quarantine/<date>/` with `restore.sh`) before permanent deletion. |
 | It is frozen, old, or untouched for months | Frozen does not mean unused; age is a clue, not evidence. |
 | It is acceptance evidence, so all of it stays | The evidence is the record: logs, screenshots, reports, and project files. Gigabytes of inputs and outputs that the generator can recreate are not the record; propose deleting them with the regeneration path. |
 | A test project references it, so it must stay | References going offline is an impact to report, not a veto. Say what needs regenerating before the next retest. |
@@ -86,7 +87,7 @@ Sort every candidate into one of two kinds. Irreplaceable: unique commits, uncom
 
 ## Report
 
-Write the report in the user's language. Lead with the decision table; summarize leftovers by pattern (`dist/**`, `*.tsbuildinfo`) rather than dumping file lists. Every item of 1 GiB or more, and the ten largest items overall, appear in the table whatever the decision, with whether they can be regenerated and what deleting them would affect.
+Write the report in the user's language. When the user's or host's rules require their own status line at the top of every reply, put that line first and keep the template's `Status` consistent with it. Lead with the decision table; summarize leftovers by pattern (`dist/**`, `*.tsbuildinfo`) rather than dumping file lists. Every item of 1 GiB or more, and the ten largest items overall, appear in the table whatever the decision, with whether they can be regenerated and what deleting them would affect.
 
 ```text
 Scope: <what was requested>   Mode: inspect only | executed   Status: DONE | PENDING (<n> items)
