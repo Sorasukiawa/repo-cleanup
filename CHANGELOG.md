@@ -2,6 +2,30 @@
 
 版本号写在 `SKILL.md` 的 `metadata.version` 和 `.claude-plugin/plugin.json` 的 `version`，与本文件最上面的条目保持一致（`tests/check-skill.sh` 会检查）。Claude Code 插件按 `version` 判断更新，每次发布都要升版本号。
 
+## 1.4.0 — 2026-11-12
+
+### 规则
+
+- 退役 worktree 或删除分支前，一律先证明已合入默认分支（`git merge-base --is-ancestor`、`git branch --merged`，或 tip 等于 `headRefOid` 的 squash 合并记录）。宿主快照归档也不例外：快照只是本机恢复数据，不算合入。
+- 没合入又要放弃的工作，先把分支推到远端 `archive/<原分支名>`，用 `git ls-remote` 读回核对 SHA，再退役；本地 branch 或 tag 不再算留底。`worktrees.md` 新增「Abandoning Unmerged Work」一节，判断表和分支删除同步修改。
+- 有未提交改动的 worktree 不退役，交给用户处理，即使宿主快照能保存这些改动。`hosts.md` 删除了 Codex「不提交、不证明合入也可归档」的说法，并新增适用于所有宿主的留底规则。
+
+### 宿主
+
+- `hosts.md` 新增 Orca 小节：用 `orca worktree list` 定位、`orca worktree rm` 按精确选择器移除，不按目录名直接删。
+- `hosts.md` 新增 Antigravity 小节：worktree 位置、分支名常为下划线且无工具前缀，退役前核对合入状态和是否有进行中的对话。
+- `SKILL.md` 路由表和四语 README 的宿主列表同步补上 Orca 与 Antigravity。
+
+### 文档
+
+- `SKILL.md` 外置隔离区示例路径改为通用占位 `/Volumes/<external-drive>/`。
+- `evals.json` 的 Codex 归档用例补充合入证明或远端留底的期望。
+
+### 验证状态
+
+- 已验证：`tests/check-skill.sh`（含 `claude plugin validate --strict`）和 `tests/test-survey.sh` 全部通过。
+- 未验证：Orca 与 Antigravity 小节按本机 `orca worktree --help` 和实际目录、分支名核对写成，未在真实清理任务中跑过。
+
 ## 1.3.1 — 2026-10-22
 
 ### 盘点脚本与测试

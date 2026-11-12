@@ -56,7 +56,7 @@ Codex 用 `$repo-cleanup`；Claude Code 用 `/repo-cleanup`（插件安装时完
 - 按任务只读取需要的参考：空间清理、工作区与分支、宿主托管工作区、文档、Windows。
 - 根据引用和用途区分源码、缓存、本地机密、交付件与历史资料；忽略规则和文件年龄不直接决定删除。SKILL.md 中的「常见误判」表列出了最容易误删的情况，例如 `git worktree remove` 会连带删除 ignored 的 `.env`。
 - 按能否重新生成来判断：独有提交、未提交改动、机密和本地配置、用户制作的素材、唯一的发布包保留；构建、安装或生成器能重建的内容，即使被测试工程引用也列为候选，并写明重建方式和删除影响。≥1 GiB 的项和体积前十的项不论结论都会出现在报告里，凭判断保留的大项交给你决定，状态标为 PENDING。
-- 工作区退役先过门槛检查（在用、锁定、宿主托管、未保存的改动或 ignored 文件），再看合并证据：普通合并、squash 合并（本地 tip 必须等于 PR 的 `headRefOid`）、detached HEAD。Codex 托管工作区使用原生归档，Claude Code 和桌面端工作区优先交给宿主处理。
+- 工作区退役先过门槛检查（在用、锁定、宿主托管、未保存的改动或 ignored 文件），再看合并证据：普通合并、squash 合并（本地 tip 必须等于 PR 的 `headRefOid`）、detached HEAD。退役工作区或删除分支前必须证明已合入默认分支；没合入又要放弃的，先推到远端 `archive/<原分支名>` 并用 `git ls-remote` 读回确认；有未提交改动的不退役，交给你处理。Codex 托管工作区使用原生归档，Claude Code、桌面端、Orca 和 Antigravity 的工作区优先交给宿主处理。
 - 分支默认保留；删除时 `-d` 和 `-D` 各有条件，并记录 `name sha` 以便恢复。`[gone]` 只是线索。远端和工单不会自动改动。
 - 文档以准确、易用为目标，精简只是可选手段。README 服务读者，AGENTS / CLAUDE.md 保留项目决策需要的长期约定，阶段安排放入进度文档。
 - 在 Claude Code 中，盘点脚本和只读的 git、`du`、`df` 查询已通过 `allowed-tools` 预先授权，盘点时不会逐条弹出权限确认；删除、移除、推送类命令不在其中。
@@ -79,7 +79,7 @@ bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --size
 | `agents/openai.yaml` | Codex 界面中的显示名称、简介和默认提示 |
 | `references/space.md` | 清理范围（含仓库外的项目产物）、各生态速查、测试生成数据、空间统计 |
 | `references/worktrees.md` | 工作区与分支退役：门槛、合并证据、决策表、分支删除 |
-| `references/hosts.md` | Codex、Claude Code、Claude 桌面端托管的工作区 |
+| `references/hosts.md` | Codex、Claude Code、Claude 桌面端、Orca、Antigravity 托管的工作区 |
 | `references/docs.md` | README、AGENTS、CLAUDE.md 等文档与规则整理 |
 | `references/windows.md` | 原生 PowerShell、Git Bash、WSL 适配 |
 | `scripts/survey.sh` | 只读盘点脚本 |

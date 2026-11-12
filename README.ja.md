@@ -58,7 +58,7 @@ $repo-cleanup を使って、今回の目的に沿ってリポジトリを整理
 - 作業に必要な参考資料だけを読み込みます：容量整理、worktree とブランチ、ホスト管理の worktree、文書、Windows。
 - 参照箇所と用途から、ソースコード、キャッシュ、ローカルの機密情報、配布物、過去の資料を区別します。無視設定やファイルの古さだけで削除を判断しません。SKILL.md の「よくある誤判断」表には、誤って削除しやすい例をまとめています（例：`git worktree remove` は ignored の `.env` も削除する）。
 - 再生成できるかどうかで判断します。固有のコミット、未コミットの変更、機密情報とローカル設定、ユーザーが作った素材、唯一のリリース成果物は残します。ビルド、インストール、生成スクリプトで再作成できるものは、テスト用プロジェクトから参照されていても候補とし、再生成の方法と削除の影響を示します。1 GiB 以上の項目とサイズ上位 10 件は判断にかかわらず報告に載せ、判断だけで残した大きな項目はユーザーに確認し、状態を PENDING にします。
-- worktree の整理では、まず前提チェック（使用中、ロック中、ホスト管理、未保存の変更や ignored ファイル）を行い、その後マージの証拠を確認します：通常マージ、squash マージ（ローカルの tip が PR の `headRefOid` と一致すること）、detached HEAD。Codex 管理の worktree は標準のアーカイブ機能を使い、Claude Code とデスクトップアプリの worktree はまずホスト側の仕組みに任せます。
+- worktree の整理では、まず前提チェック（使用中、ロック中、ホスト管理、未保存の変更や ignored ファイル）を行い、その後マージの証拠を確認します：通常マージ、squash マージ（ローカルの tip が PR の `headRefOid` と一致すること）、detached HEAD。worktree の整理やブランチの削除の前には、既定ブランチにマージ済みであることを確認します。マージされていない作業を破棄する場合は、先にリモートの `archive/<元のブランチ名>` へプッシュし、`git ls-remote` で読み戻して確認します。未コミットの変更がある worktree は整理せず、ユーザーに任せます。Codex 管理の worktree は標準のアーカイブ機能を使い、Claude Code、デスクトップアプリ、Orca、Antigravity の worktree はまずホスト側の仕組みに任せます。
 - ブランチは既定で残します。削除する場合は `-d` と `-D` をそれぞれの条件で使い分け、復元用に `name sha` を記録します。`[gone]` は手がかりにすぎません。リモートや Issue は自動で変更しません。
 - 文書の目標は正確さと使いやすさであり、簡素化は必要に応じて使う手段です。README は読者のために、AGENTS / CLAUDE.md はプロジェクトの判断に必要な長期的な規約のために使い、段階ごとの取り決めは進捗文書に記載します。
 - Claude Code では、調査スクリプトと読み取り専用の git、`du`、`df` コマンドを `allowed-tools` で事前に許可しているため、調査中にコマンドごとの許可確認は出ません。削除、取り外し、プッシュ系のコマンドは含みません。
@@ -81,7 +81,7 @@ bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --size
 | `agents/openai.yaml` | Codex の画面に表示する名前、概要、既定のプロンプト |
 | `references/space.md` | 整理の範囲（リポジトリ外のプロジェクト成果物を含む）、エコシステム別の早見表、テストで生成したデータ、容量の測定 |
 | `references/worktrees.md` | worktree とブランチの整理：前提チェック、マージの証拠、判断表、ブランチ削除 |
-| `references/hosts.md` | Codex、Claude Code、Claude デスクトップアプリが管理する worktree |
+| `references/hosts.md` | Codex、Claude Code、Claude デスクトップアプリ、Orca、Antigravity が管理する worktree |
 | `references/docs.md` | README、AGENTS、CLAUDE.md などの文書と規則の整理 |
 | `references/windows.md` | ネイティブ PowerShell、Git Bash、WSL |
 | `scripts/survey.sh` | 読み取り専用の調査スクリプト |
