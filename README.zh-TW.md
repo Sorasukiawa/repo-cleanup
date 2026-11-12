@@ -58,7 +58,7 @@ Codex 使用 `$repo-cleanup`；Claude Code 使用 `/repo-cleanup`（以外掛安
 - 依任務只讀取需要的參考：空間清理、工作樹與分支、宿主管理的工作樹、文件、Windows。
 - 根據引用與用途區分原始碼、快取、本機機密、交付檔案及歷史資料；忽略規則和檔案年齡不直接決定刪除。SKILL.md 的「常見誤判」表列出最容易誤刪的情況，例如 `git worktree remove` 會連帶刪除 ignored 的 `.env`。
 - 依能否重新產生來判斷：獨有提交、未提交變更、機密與本機設定、使用者製作的素材、唯一的發布包保留；建置、安裝或產生器能重建的內容，即使被測試工程引用也列為候選，並寫明重建方式與刪除影響。≥1 GiB 的項目與體積前十的項目不論結論都會出現在報告中，依判斷保留的大項交由你決定，狀態標為 PENDING。
-- 工作樹退役先通過門檻檢查（使用中、已鎖定、宿主管理、未保存的變更或 ignored 檔案），再看合併證據：一般合併、squash 合併（本機 tip 必須等於 PR 的 `headRefOid`）、detached HEAD。Codex 管理的工作樹使用原生封存，Claude Code 與桌面版的工作樹優先交由宿主處理。
+- 工作樹退役先通過門檻檢查（使用中、已鎖定、宿主管理、未保存的變更或 ignored 檔案），再看合併證據：一般合併、squash 合併（本機 tip 必須等於 PR 的 `headRefOid`）、detached HEAD。退役工作樹或刪除分支前必須證明已合併進預設分支；沒合併又要放棄的，先推送到遠端 `archive/<原分支名>` 並用 `git ls-remote` 讀回確認；有未提交變更的不退役，交由你處理。Codex 管理的工作樹使用原生封存，Claude Code、桌面版、Orca 與 Antigravity 的工作樹優先交由宿主處理。
 - 分支預設保留；刪除時 `-d` 與 `-D` 各有條件，並記錄 `name sha` 以便還原。`[gone]` 只是線索。遠端與議題不會自動變更。
 - 文件以準確、易用為目標，精簡僅是按需手段。README 服務讀者，AGENTS / CLAUDE.md 保留專案決策所需的長期約定，階段安排放入進度文件。
 - 在 Claude Code 中，盤點腳本與唯讀的 git、`du`、`df` 查詢已透過 `allowed-tools` 預先授權，盤點時不會逐條跳出權限確認；刪除、移除、推送類指令不在其中。
@@ -81,7 +81,7 @@ bash ~/.agents/skills/repo-cleanup/scripts/survey.sh --repo . --base main --size
 | `agents/openai.yaml` | Codex 介面中的顯示名稱、簡介與預設提示 |
 | `references/space.md` | 清理範圍（含儲存庫外的專案產物）、各生態速查、測試產生資料、空間統計 |
 | `references/worktrees.md` | 工作樹與分支退役：門檻、合併證據、決策表、分支刪除 |
-| `references/hosts.md` | Codex、Claude Code、Claude 桌面版管理的工作樹 |
+| `references/hosts.md` | Codex、Claude Code、Claude 桌面版、Orca、Antigravity 管理的工作樹 |
 | `references/docs.md` | README、AGENTS、CLAUDE.md 等文件與規則整理 |
 | `references/windows.md` | 原生 PowerShell、Git Bash、WSL 適配 |
 | `scripts/survey.sh` | 唯讀盤點腳本 |

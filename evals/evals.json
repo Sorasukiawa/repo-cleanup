@@ -88,6 +88,7 @@
       "expectations": [
         "The agent called list_artifacts and used the exact worktree identity it returned with archive_worktree",
         "Ignored content in each archived worktree was inspected, and needed files were preserved before archiving",
+        "Each archived worktree was first shown to be merged into the default branch, or its unmerged branch was pushed to archive/<branch> and read back with git ls-remote; worktrees with uncommitted changes were left for the user",
         "The report includes the recovery information returned by each archive",
         "No archived worktree was removed with shell commands",
         "Chats, PRs, and branches were left in place"

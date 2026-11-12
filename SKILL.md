@@ -6,7 +6,7 @@ compatibility: Requires git. gh is optional for squash-merge evidence. scripts/s
 argument-hint: "[inspect only | caches | worktrees | branches | docs]"
 allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/survey.sh *), Bash(bash ${CLAUDE_SKILL_DIR}/scripts/survey.sh), Bash(git status *), Bash(git -C * status *), Bash(git worktree list *), Bash(git -C * worktree list *), Bash(git ls-files *), Bash(git -C * ls-files *), Bash(git rev-parse *), Bash(git -C * rev-parse *), Bash(git rev-list *), Bash(git -C * rev-list *), Bash(git merge-base *), Bash(git -C * merge-base *), Bash(git for-each-ref *), Bash(git -C * for-each-ref *), Bash(git log *), Bash(git -C * log *), Bash(gh pr list *), Bash(du -sh *), Bash(df -h *)
 metadata:
-  version: "1.3.1"
+  version: "1.4.0"
 ---
 
 # Repository Cleanup and Organization
@@ -29,7 +29,7 @@ Identify the host OS, active shell, actual repository root, applicable rules (AG
 | --- | --- |
 | Caches, build output (inside the repository or project-owned outside it), generated test data, large or unknown files, "what can be deleted" | [Space cleanup](references/space.md) |
 | Retiring worktrees or deleting branches | [Worktree verification](references/worktrees.md) |
-| Worktrees created by an agent host (Codex, Claude Code, the Claude desktop app) | [Host-managed worktrees](references/hosts.md), together with worktree verification |
+| Worktrees created by an agent host (Codex, Claude Code, the Claude desktop app, Orca, Antigravity) | [Host-managed worktrees](references/hosts.md), together with worktree verification |
 | README, AGENTS.md, CLAUDE.md, or other documentation and rules | [Documentation](references/docs.md) |
 | Windows filesystem, PowerShell, or WSL | [Windows cleanup](references/windows.md) |
 
@@ -67,7 +67,7 @@ Sort every candidate into one of two kinds. Irreplaceable: unique commits, uncom
 | A merged PR exists, so the branch can go | Only if the local tip equals the PR's `headRefOid` and the merge commit is in the target. Otherwise later work exists. |
 | The upstream is `[gone]`, so it was merged | The remote branch was deleted. That is a candidate signal, not merge evidence. |
 | A port, process, or handle check found nothing | A failed or empty check does not prove a directory is idle. Another AI session (Codex / Claude Code / Antigravity) may be between turns and about to read ignored artifacts (`distribution/artifacts/`, `target/`, test payloads) in that worktree. If a worktree has recent activity (within 48h), uncommitted changes, or an unarchived AI thread, exempt the **entire worktree** (including its ignored build/artifact directories). |
-| Moving files to local Trash is a safe test to see if anything breaks | Moving files out of their original path breaks any active session reading that path immediately, and local `~/.Trash` stays on the same volume so it frees zero bytes on a full disk. Instead, exempt active worktrees entirely, and stage idle project artifacts/worktrees to an external-drive quarantine directory (e.g. `/Volumes/Sora2T/.Cleanup_Quarantine/<date>/` with `restore.sh`) before permanent deletion. |
+| Moving files to local Trash is a safe test to see if anything breaks | Moving files out of their original path breaks any active session reading that path immediately, and local `~/.Trash` stays on the same volume so it frees zero bytes on a full disk. Instead, exempt active worktrees entirely, and stage idle project artifacts/worktrees to an external-drive quarantine directory (e.g. `/Volumes/<external-drive>/.Cleanup_Quarantine/<date>/` with `restore.sh`) before permanent deletion. |
 | It is frozen, old, or untouched for months | Frozen does not mean unused; age is a clue, not evidence. |
 | It is acceptance evidence, so all of it stays | The evidence is the record: logs, screenshots, reports, and project files. Gigabytes of inputs and outputs that the generator can recreate are not the record; propose deleting them with the regeneration path. |
 | A test project references it, so it must stay | References going offline is an impact to report, not a veto. Say what needs regenerating before the next retest. |
@@ -80,7 +80,7 @@ Sort every candidate into one of two kinds. Irreplaceable: unique commits, uncom
 
 - Write an exact path list for each round of deletions, checking resolved paths and link boundaries. Do not broaden the scope with recursive globs or follow links beyond the confirmed candidates.
 - Check processes or open handles for directories that builds, tests, or services may use before removing them.
-- Preserve before removing: copy needed ignored files, keep commits reachable from a branch or tag, and verify the copy. Uncertainty about one candidate does not block the others.
+- Preserve before removing: copy needed ignored files and verify the copy. Retire a worktree or delete a branch only after proving it is merged into the default branch; work the user abandons unmerged is first pushed to `archive/<branch>` on the remote and read back with `git ls-remote`. A worktree with uncommitted changes stays and goes to the user. Uncertainty about one candidate does not block the others.
 - Put temporary archives in an existing locally ignored location or one the user specifies. Do not commit private material. Do not automatically delete newly saved archives after cleanup.
 - Keep branches by default when only retiring worktrees. Local branches, remote branches, and PR or issue status are separate objects; local cleanup does not extend to remote deletion or issue updates unless the user asks.
 - If a removal is refused, read the reason instead of adding `--force`, `reset`, or `stash`.
